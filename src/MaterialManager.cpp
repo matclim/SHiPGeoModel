@@ -91,6 +91,19 @@ GeoMaterial* MaterialManager::aluminum()
   return m;
 }
 
+GeoMaterial* MaterialManager::iron()
+{
+  static GeoMaterial* m = nullptr;
+  if (m) return m;
+
+  static GeoElement* Fe = nullptr;
+  if (!Fe) Fe = new GeoElement("Iron", "Fe", 26.0, 55.845 * g/mole);
+
+  m = new GeoMaterial("Iron", 7.874 * g/cm3);
+  m->add(Fe, 1.0);
+  m->lock();
+  return m;
+}
 
 MaterialManager::RGBA MaterialManager::rgbaFor(const std::string& name) const
 {

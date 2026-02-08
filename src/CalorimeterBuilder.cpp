@@ -24,7 +24,9 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   const double leadZ   = cfg.lead_thickness_mm * mm;
   const double scintZ  = cfg.scint_thickness_mm * mm;
   const double airGapZ = cfg.airgap_mm * mm;
- 
+
+  const double ironZ = cfg.iron_thickness_mm * mm;
+
   const double wideW = 60.0 * mm;
   const double thinW = 10.0 * mm;
 
@@ -52,6 +54,10 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   auto* leadShape = new GeoBox(0.5*plateXY, 0.5*plateXY, 0.5*leadZ);
   auto* leadLog   = new GeoLogVol("LeadPlateLog", leadShape, leadMat);
 
+
+  auto* ironShape = new GeoBox(0.5*plateXY, 0.5*plateXY, 0.5*ironZ);
+  auto* ironLog   = new GeoLogVol("IronPlateLog", ironShape, MM.iron());
+
   auto* wideShape = new GeoBox(0.5*(60.0*mm), 0.5*plateXY, 0.5*scintZ);
   auto* wideLog   = new GeoLogVol("WidePVTBarLog", wideShape, pvtMat);
 
@@ -60,14 +66,25 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
 
   // Total thickness for centering
   double totalZ = 0.0;
+  
+  // --- section 1: code 7 = lead ---
   for (int code : cfg.layers) {
     if (code == 7) totalZ += leadZ;
     else if (code == 1 || code == 2 || code == 3 || code == 4) totalZ += scintZ;
     else if (code == 5) totalZ += hplZ;
     else if (code == 8) totalZ += airGapZ;
-    else throw std::runtime_error("Unknown layer code: " + std::to_string(code));
+    else throw std::runtime_error("Unknown layer code in layers: " + std::to_string(code));
   }
   
+  // --- section 2: code 7 = iron ---
+  for (int code : cfg.layers2) {
+    if (code == 7) totalZ += ironZ;
+    else if (code == 1 || code == 2 || code == 3 || code == 4) totalZ += scintZ;
+    else if (code == 5) totalZ += hplZ;   // allow it if you want
+    else if (code == 8) totalZ += airGapZ;
+    else throw std::runtime_error("Unknown layer code in layers2: " + std::to_string(code));
+  }
+
   int iWideH=0, iWideV=0, iThinH=0, iThinV=0, iLead=0, iGap=0, iHPL=0;
   
   double zCursor = cfg.center_stack ? -0.5 * totalZ : 0.0;
@@ -105,7 +122,7 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
     else if (code == 5) {
       const double zCenter = zCursor + 0.5*hplZ;
       Fibre_HPLayer::build(world,
-                           MM.air(),
+                           MM.aluminum(),
                            MM.polystyrene(),
                            zCenter/mm,
                            iHPL,
@@ -121,4 +138,56 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
       ++iGap;
     }
   }
-}
+  int iIron = 0;  // iron counter
+  
+  for (int code : cfg.layers2) {
+  
+    if (code == 7) {
+      auto* ironPhys = new GeoPhysVol(ironLog);
+      world->add(new GeoNameTag(("Iron_" + std::to_string(iIron)).c_str()));
+      world->add(new GeoTransform(GeoTrf::Translate3D(0, 0, zCursor + 0.5*ironZ)));
+      world->add(ironPhys);
+      zCursor += ironZ;
+      ++iIron;
+    }
+  
+    else if (code == 1) {
+      const double zCenter = zCursor + 0.5*scintZ;
+      BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm, "WidePVT_H", iWideH, BarAxis::AlongX);
+      zCursor += scintZ; ++iWideH;
+    }
+  
+    else if (code == 2) {
+      const double zCenter = zCursor + 0.5*scintZ;
+      BarLayer::place(world, wideVLog, 60.0, 36, zCenter/mm, "WidePVT_V", iWideV, BarAxis::AlongY);
+      zCursor += scintZ; ++iWideV;
+    }
+  
+    // optional: allow air gaps in iron section too
+    else if (code == 8) {
+      zCursor += airGapZ;
+      ++iGap;
+    }
+  
+    // optional: if you truly only want wide layers in the back, then forbid 3/4/5
+    else {
+      throw std::runtime_error("Unsupported layer code in layers2: " + std::to_string(code));
+    }
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

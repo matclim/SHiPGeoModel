@@ -15,4 +15,8 @@ struct CalorimeterConfig {
 
   double hpl_thickness_mm = 50.0;
   double fiber_diameter_mm = 1.2;
+
+  std::vector<int> layers2;
+  double iron_thickness_mm = 170.0;
+
 };
