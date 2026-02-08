@@ -19,4 +19,6 @@ struct CalorimeterConfig {
   std::vector<int> layers2;
   double iron_thickness_mm = 170.0;
 
+  double gap_ecal_hcal = 0;
+
 };

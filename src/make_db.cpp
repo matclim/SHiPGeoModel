@@ -54,31 +54,27 @@ static GeoPhysVol* createWorld(MaterialManager& MM)
 }
 
 
-static void writeGmexMatVisJSON(const std::string& filename, MaterialManager& MM)
-{
-  // Minimal schema (common in gmex): list of material objects with name + rgba array.
-  // If your gmex uses a different schema, paste your current file and I’ll adapt this exactly.
-  std::ofstream out(filename);
-  out << std::fixed << std::setprecision(6);
-
-  out << "{\n";
-  out << "  \"materials\": [\n";
-
-  auto writeOne = [&](const std::string& name, bool last){
-    auto c = MM.rgbaFor(name);
-    out << "    {\"name\": \"" << name << "\", \"color\": ["
-        << c[0] << ", " << c[1] << ", " << c[2] << ", " << c[3] << "]}";
-    out << (last ? "\n" : ",\n");
+static void writeGmexMatVisJSON(const std::string& filename, const MaterialManager& MM){
+  auto dump = [&](const std::string& n){
+    auto c = MM.rgbaFor(n); // std::array<double,4> {r,g,b,a}
+    return std::string("    { \"name\": \"") + n +
+           "\", \"diffuse\": [" + std::to_string(c[0]) + "," + std::to_string(c[1]) + "," +
+                              std::to_string(c[2]) + "], \"opacity\": " + std::to_string(c[3]) + " }";
   };
 
-  writeOne("Air",  false);
-  writeOne("Lead", false);
-  writeOne("PVT",  true);
 
+  std::ofstream out(filename);
+  out << "{\n";
+  out << "  \"materials\": [\n";
+  out << dump("Lead") << ",\n";
+  out << dump("Iron") << ",\n";
+  out << dump("PVT") << ",\n";
+  out << dump("Polystyrene") << ",\n";
+  out << dump("Aluminium") << ",\n";
+  out << dump("Air") << "\n";
   out << "  ]\n";
   out << "}\n";
 }
-
 
 
 int main(int argc, char** argv)

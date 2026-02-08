@@ -83,9 +83,9 @@ GeoMaterial* MaterialManager::aluminum()
   if (m) return m;
 
   static GeoElement* Al = nullptr;
-  if (!Al) Al = new GeoElement("Aluminum", "Al", 13.0, 26.9815 * g/mole);
+  if (!Al) Al = new GeoElement("Aluminium", "Al", 13.0, 26.9815 * g/mole);
 
-  m = new GeoMaterial("Aluminum", 2.70 * g/cm3);
+  m = new GeoMaterial("Aluminium", 2.70 * g/cm3);
   m->add(Al, 1.0);
   m->lock();
   return m;
@@ -108,8 +108,11 @@ GeoMaterial* MaterialManager::iron()
 MaterialManager::RGBA MaterialManager::rgbaFor(const std::string& name) const
 {
   // Defaults: white opaque
-  if (name == "Lead") return {0.60, 0.60, 0.60, 1.0}; // gray
+  if (name == "Lead") return {0.80, 0.80, 0.80, 1.0}; // dark gray
+  if (name == "Iron") return {0.60, 0.60, 0.60, 1.0}; // light gray
   if (name == "PVT")  return {0.00, 0.65, 0.65, 1.0}; // teal
+  if (name == "Polystyrene")  return {0.00, 0.0, 1.0, 1.0}; // teal
+  if (name == "Aluminium")  return {0.00, 0.0, 0.0, 1.0}; // white 
   if (name == "Air")  return {1.00, 1.00, 1.00, 0.02}; // almost invisible, optional
   return {1.0, 1.0, 1.0, 1.0};
 }

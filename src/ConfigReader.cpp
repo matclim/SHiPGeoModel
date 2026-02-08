@@ -59,6 +59,7 @@ CalorimeterConfig readConfigFile(const std::string& path)
     else if (key == "airgap_mm") cfg.airgap_mm = std::stod(val);
     else if (key == "layers2") cfg.layers2 = parseIntList(val);
     else if (key == "iron_thickness_mm") cfg.iron_thickness_mm = std::stod(val);
+    else if (key == "gap_ecal_hcal") cfg.gap_ecal_hcal = std::stod(val);
 
   }
   if (cfg.layers.empty())

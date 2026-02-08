@@ -139,7 +139,9 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
     }
   }
   int iIron = 0;  // iron counter
-  
+ 
+  zCursor += cfg.gap_ecal_hcal;
+
   for (int code : cfg.layers2) {
   
     if (code == 7) {
