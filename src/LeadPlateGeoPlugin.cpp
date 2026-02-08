@@ -42,5 +42,5 @@ void LeadPlateGeoPlugin::create(GeoVPhysVol* world, bool /*publish*/)
   const double barHalfZ   = 0.5 * (10.0 * mm); // 5 mm  (since barZ=10mm)
   const double zBarCenter = plateHalfZ + barHalfZ; // 6.5 mm
 
-  PVTBarLayer::build(world, pvt_mat, zBarCenter / mm);
+  PVTBarLayer::build(world, barLog, zBarCenter / mm, iPvt);
 }

@@ -58,6 +58,39 @@ GeoMaterial* MaterialManager::pvt()
   return m;
 }
 
+GeoMaterial* MaterialManager::polystyrene()
+{
+  static GeoMaterial* m = nullptr;
+  if (m) return m;
+
+  static GeoElement* C = nullptr;
+  static GeoElement* H = nullptr;
+  if (!C) C = new GeoElement("Carbon",   "C", 6.0, 12.011 * g/mole);
+  if (!H) H = new GeoElement("Hydrogen", "H", 1.0, 1.008  * g/mole);
+
+  // Polystyrene repeat unit C8H8; density depends on formulation.
+  // Use a reasonable default; you can make this configurable later.
+  m = new GeoMaterial("Polystyrene", 1.05 * g/cm3);
+  m->add(C, 8.0);
+  m->add(H, 8.0);
+  m->lock();
+  return m;
+}
+
+GeoMaterial* MaterialManager::aluminum()
+{
+  static GeoMaterial* m = nullptr;
+  if (m) return m;
+
+  static GeoElement* Al = nullptr;
+  if (!Al) Al = new GeoElement("Aluminum", "Al", 13.0, 26.9815 * g/mole);
+
+  m = new GeoMaterial("Aluminum", 2.70 * g/cm3);
+  m->add(Al, 1.0);
+  m->lock();
+  return m;
+}
+
 
 MaterialManager::RGBA MaterialManager::rgbaFor(const std::string& name) const
 {

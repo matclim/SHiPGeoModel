@@ -15,7 +15,8 @@ public:
   GeoMaterial* air();   // simple air proxy (N)
   GeoMaterial* lead();  // Pb
   GeoMaterial* pvt();   // C9H10, density ~1.032 g/cm3
-
+  GeoMaterial* polystyrene(); 
+  GeoMaterial* aluminum();
   // RGBA in [0,1]
   using RGBA = std::array<double,4>;
   RGBA rgbaFor(const std::string& materialName) const;

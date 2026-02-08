@@ -9,11 +9,11 @@ find_package(GeoModelCore REQUIRED)
 find_package(GeoModelIO REQUIRED)
 
 add_library(LeadPlateGeoPlugin SHARED
-  src/LeadPlateGeoPlugin.cpp
-  src/PVTBarLayer.cpp
+  src/BarLayer.cpp
   src/MaterialManager.cpp
   src/CalorimeterBuilder.cpp
   src/ConfigReader.cpp
+  src/Fibre_HPLayer.cpp
 )
 
 target_include_directories(LeadPlateGeoPlugin PUBLIC
