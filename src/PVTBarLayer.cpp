@@ -18,7 +18,6 @@ void PVTBarLayer::build(GeoVPhysVol* mother, GeoLogVol* barLog, double zCenter_m
   for (int i = 0; i < nBars; ++i) {
     const double x = x0 + i * barX;
     auto barPhys = new GeoPhysVol(barLog);
-
     mother->add(new GeoNameTag(("PVT_L" + std::to_string(layerIndex) + "_B" + std::to_string(i)).c_str()));
     mother->add(new GeoTransform(GeoTrf::Translate3D(x, 0.0, zCenter_mm * mm)));
     mother->add(barPhys);

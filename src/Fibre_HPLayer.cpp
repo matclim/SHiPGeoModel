@@ -12,7 +12,6 @@
 #include <cmath>
 
 using namespace GeoModelKernelUnits;
-
 void Fibre_HPLayer::build(GeoVPhysVol* mother,
                           GeoMaterial* aluminumMat,
                           GeoMaterial* fiberMat,
@@ -20,7 +19,8 @@ void Fibre_HPLayer::build(GeoVPhysVol* mother,
                           int layerIndex,
                           double casingXY_mm,
                           double casingZ_mm,
-                          double fiberDiam_mm)
+                          double fiberDiam_mm,
+                          bool fibresAlongY)
 {
   // --- casing dimensions ---
   const double casingXY = casingXY_mm * mm;
@@ -29,7 +29,10 @@ void Fibre_HPLayer::build(GeoVPhysVol* mother,
   // Build casing (one physvol per layer)
   auto* casingShape = new GeoBox(0.5*casingXY, 0.5*casingXY, 0.5*casingZ);
   auto* casingLog   = new GeoLogVol("HPL_CasingLog", casingShape, aluminumMat);
+  
   auto* casingPhys  = new GeoPhysVol(casingLog);
+
+  
 
   mother->add(new GeoNameTag(("HPL_" + std::to_string(layerIndex)).c_str()));
   mother->add(new GeoTransform(GeoTrf::Translate3D(0, 0, zCenter_mm * mm)));
@@ -40,14 +43,18 @@ void Fibre_HPLayer::build(GeoVPhysVol* mother,
   const double fiberLen = casingXY; // 2160 mm along Y (your requirement)
   const double halfLen = 0.5 * fiberLen;
 
-  // GeoTube is along Z by default. We'll rotate so cylinder axis becomes Y.
-  // Rotate +90° about X: Z -> Y.
-  const GeoTrf::Transform3D rotToY = GeoTrf::RotateX3D(90.0 * deg);
+  // If fibresAlongY: rotate +90° about X -> Z becomes Y.
+  // Else (fibres along X): rotate -90° about Y -> Z becomes X.
+  GeoTrf::Transform3D rotAxis = GeoTrf::Transform3D::Identity();
+  if (fibresAlongY) {
+    rotAxis = GeoTrf::RotateX3D(90.0 * deg);     // Z -> Y
+  } else {
+    rotAxis = GeoTrf::RotateY3D(-90.0 * deg);    // Z -> X
+  }
 
   // Reuse a single logical volume for all fibres in this layer
   auto* fiberShape = new GeoTube(0.0, r, halfLen);
   auto* fiberLog   = new GeoLogVol("HPL_FiberLog", fiberShape, fiberMat);
-
   // --- placement: 3 sublayers, 1800 fibres each ---
   const int    nFib = 1800;
   const double pitch = fiberDiam_mm * mm;      // tight stack
@@ -75,9 +82,13 @@ void Fibre_HPLayer::build(GeoVPhysVol* mother,
       casingPhys->add(new GeoNameTag(
         ("HPL" + std::to_string(layerIndex) + "_S" + std::to_string(s) + "_F" + std::to_string(i)).c_str()
       ));
+      // If fibres run along Y, we pack them in X (x varies).
+      // If fibres run along X, we pack them in Y (y varies).
+      const double xPos = fibresAlongY ? x : 0.0;
+      const double yPos = fibresAlongY ? 0.0 : x;  // reuse "x" as the packing coordinate
 
       casingPhys->add(new GeoTransform(
-        GeoTrf::Translate3D(x, 0.0, z) * rotToY
+        GeoTrf::Translate3D(xPos, yPos, z) * rotAxis
       ));
       casingPhys->add(fiberPhys);
     }

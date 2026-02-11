@@ -58,6 +58,7 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   auto* ironShape = new GeoBox(0.5*plateXY, 0.5*plateXY, 0.5*ironZ);
   auto* ironLog   = new GeoLogVol("IronPlateLog", ironShape, MM.iron());
 
+
   auto* wideShape = new GeoBox(0.5*(60.0*mm), 0.5*plateXY, 0.5*scintZ);
   auto* wideLog   = new GeoLogVol("WidePVTBarLog", wideShape, pvtMat);
 
@@ -72,6 +73,7 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
     if (code == 7) totalZ += leadZ;
     else if (code == 1 || code == 2 || code == 3 || code == 4) totalZ += scintZ;
     else if (code == 5) totalZ += hplZ;
+    else if (code == 6) totalZ += hplZ;
     else if (code == 8) totalZ += airGapZ;
     else throw std::runtime_error("Unknown layer code in layers: " + std::to_string(code));
   }
@@ -80,7 +82,8 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   for (int code : cfg.layers2) {
     if (code == 7) totalZ += ironZ;
     else if (code == 1 || code == 2 || code == 3 || code == 4) totalZ += scintZ;
-    else if (code == 5) totalZ += hplZ;   // allow it if you want
+    else if (code == 5) totalZ += hplZ; 
+    else if (code == 6) totalZ += hplZ; 
     else if (code == 8) totalZ += airGapZ;
     else throw std::runtime_error("Unknown layer code in layers2: " + std::to_string(code));
   }
@@ -132,6 +135,20 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
       zCursor += hplZ;
       ++iHPL;
     }
+    else if (code == 6) {
+      const double zCenter = zCursor + 0.5*hplZ;
+      Fibre_HPLayer::build(world,
+                           MM.aluminum(),
+                           MM.polystyrene(),
+                           zCenter/mm,
+                           iHPL,
+                           cfg.plate_xy_mm,
+                           cfg.hpl_thickness_mm,
+                           cfg.fiber_diameter_mm,
+                           /*fibresAlongY=*/false);   // <-- rotated 90° (run along X)
+      zCursor += hplZ;
+      ++iHPL;
+    }
     else if (code == 8) {
       // airgap: no volume needed; just advance z
       zCursor += airGapZ;
@@ -151,6 +168,20 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
       world->add(ironPhys);
       zCursor += ironZ;
       ++iIron;
+    }
+    else if (code == 6) {
+      const double zCenter = zCursor + 0.5*hplZ;
+      Fibre_HPLayer::build(world,
+                           MM.aluminum(),
+                           MM.polystyrene(),
+                           zCenter/mm,
+                           iHPL,
+                           cfg.plate_xy_mm,
+                           cfg.hpl_thickness_mm,
+                           cfg.fiber_diameter_mm,
+                           /*fibresAlongY=*/false);   // <-- rotated 90° (run along X)
+      zCursor += hplZ;
+      ++iHPL;
     }
   
     else if (code == 1) {
