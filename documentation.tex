@@ -1,0 +1,327 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10}
+}
+
+\title{SHiPGeoModel Simulation Documentation}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Overview}
+
+\textbf{SHiPGeoModel} is a modular detector geometry and simulation framework built using:
+
+\begin{itemize}
+    \item \textbf{GeoModel} for detector geometry description
+    \item \textbf{Geant4} for particle transport and physics simulation
+\end{itemize}
+
+The framework provides:
+
+\begin{itemize}
+    \item Modular calorimeter layer construction
+    \item Configurable simulation control
+    \item Optional visualization
+    \item Support for rotated fibre high-precision layers
+    \item Separation of geometry and simulation logic
+\end{itemize}
+
+\section{Project Structure}
+
+\begin{lstlisting}
+include/        Header files
+src/            Implementation files
+main_g4.cpp     Geant4 simulation entry point
+RunConfig.*     Configuration parsing
+geometry.db     Generated GeoModel database
+calo.cfg        Example run configuration
+\end{lstlisting}
+
+\section{Configuration System}
+
+Simulation parameters are defined in a configuration file (e.g.\ \texttt{run.cfg}).
+
+Example:
+
+\begin{lstlisting}
+n_events=100
+macro=../run.mac
+visualize=1
+vis_macro=../vis.mac
+\end{lstlisting}
+
+These values are parsed by the \texttt{RunConfig} class.
+
+\section{Core Classes}
+
+\subsection{RunConfig}
+
+\textbf{Files:}
+\begin{itemize}
+    \item \texttt{include/RunConfig.hh}
+    \item \texttt{src/RunConfig.cc}
+\end{itemize}
+
+\subsubsection*{Purpose}
+
+Stores runtime configuration parameters parsed from a configuration file.
+
+\subsubsection*{Main Members}
+
+\begin{lstlisting}
+int n_events;
+std::string macro;
+bool visualize;
+std::string vis_macro;
+\end{lstlisting}
+
+\subsubsection*{Responsibilities}
+
+\begin{itemize}
+    \item Parse key-value pairs
+    \item Provide typed access to parameters
+    \item Control visualization and execution mode
+\end{itemize}
+
+\section{main\_g4.cpp}
+
+\subsection*{Purpose}
+
+Entry point of the Geant4 simulation.
+
+\subsection*{Execution Flow}
+
+\begin{enumerate}
+    \item Read configuration
+    \item Construct \texttt{G4RunManager}
+    \item Initialize geometry via \texttt{DetectorConstruction}
+    \item Initialize physics list
+    \item Optionally start visualization
+    \item Execute macro or run events
+\end{enumerate}
+
+Visualization is activated if:
+
+\begin{lstlisting}
+visualize=1
+\end{lstlisting}
+
+\section{DetectorConstruction}
+
+\textbf{Files:}
+\begin{itemize}
+    \item \texttt{include/DetectorConstruction.hh}
+    \item \texttt{src/DetectorConstruction.cc}
+\end{itemize}
+
+\subsection*{Purpose}
+
+Defines the full detector geometry for Geant4.
+
+\subsection*{Responsibilities}
+
+\begin{itemize}
+    \item Construct world volume
+    \item Convert GeoModel geometry to Geant4
+    \item Apply visual attributes
+    \item Register sensitive detectors
+\end{itemize}
+
+\subsection*{Key Method}
+
+\begin{lstlisting}
+G4VPhysicalVolume* Construct();
+\end{lstlisting}
+
+\section{CalorimeterBuilder}
+
+\textbf{File:}
+\begin{itemize}
+    \item \texttt{src/CalorimeterBuilder.cpp}
+\end{itemize}
+
+\subsection*{Purpose}
+
+Builds the calorimeter stack according to configuration layer codes.
+
+\subsection*{Layer Codes}
+
+\begin{longtable}{ll}
+\toprule
+Code & Description \\
+\midrule
+1 & Wide PVT scintillator layer \\
+2 & Thin PS scintillator layer \\
+5 & Fibre HPLayer (fibres along Y) \\
+6 & Fibre HPLayer rotated 90$^\circ$ (fibres along X) \\
+7 & Iron absorber \\
+8 & Air gap \\
+\bottomrule
+\end{longtable}
+
+\subsection*{Responsibilities}
+
+\begin{itemize}
+    \item Compute total stack thickness
+    \item Place layers sequentially along Z
+    \item Call appropriate builder classes
+\end{itemize}
+
+\section{Fibre\_HPLayer}
+
+\textbf{Files:}
+\begin{itemize}
+    \item \texttt{include/Fibre\_HPLayer.hh}
+    \item \texttt{src/Fibre\_HPLayer.cpp}
+\end{itemize}
+
+\subsection*{Purpose}
+
+Constructs high-precision fibre layers inside aluminium casings.
+
+\subsection*{Build Interface}
+
+\begin{lstlisting}
+static void build(
+    GeoVPhysVol* mother,
+    GeoMaterial* aluminumMat,
+    GeoMaterial* fiberMat,
+    double zCenter_mm,
+    int layerIndex,
+    double casingXY_mm,
+    double casingZ_mm,
+    double fiberDiam_mm,
+    bool fibresAlongY = true
+);
+\end{lstlisting}
+
+\subsection*{Orientation Handling}
+
+\begin{itemize}
+    \item \texttt{fibresAlongY = true} $\rightarrow$ fibres run along Y
+    \item \texttt{fibresAlongY = false} $\rightarrow$ fibres run along X
+\end{itemize}
+
+Internally, fibres are constructed as cylinders aligned along Z and rotated:
+
+\begin{itemize}
+    \item \texttt{RotateX(90$^\circ$)} converts Z-axis to Y
+    \item \texttt{RotateY(-90$^\circ$)} converts Z-axis to X
+\end{itemize}
+
+\section{Scintillator Layers}
+
+\subsection{PVTBarLayer}
+
+Constructs wide plastic scintillator bar layers arranged in a grid.
+
+\subsection{FSBarLayer}
+
+Constructs thin sampling scintillator layers.
+
+\section{Materials}
+
+Materials are managed centrally and include:
+
+\begin{itemize}
+    \item Aluminium
+    \item Polystyrene (fibre material)
+    \item Lead
+    \item Iron
+\end{itemize}
+
+\section{Visualization}
+
+Visualization is controlled via configuration:
+
+\begin{lstlisting}
+visualize=1
+vis_macro=../vis.mac
+\end{lstlisting}
+
+Example macro:
+
+\begin{lstlisting}
+/vis/open OGL
+/vis/viewer/set/style surface
+/vis/drawVolume
+/vis/scene/add/axes 0 0 0 1 m
+\end{lstlisting}
+
+Visual attributes (color, transparency) are assigned in Geant4 after geometry construction.
+
+\section{Geometry Database}
+
+The GeoModel database can be generated via:
+
+\begin{lstlisting}
+./make_leadplate_db
+gmex geometry.db
+\end{lstlisting}
+
+This allows geometry inspection independent of Geant4 simulation.
+
+\section{Simulation Flow Summary}
+
+\begin{verbatim}
+readRunConfigFile()
+        ↓
+Construct RunManager
+        ↓
+DetectorConstruction builds geometry
+        ↓
+CalorimeterBuilder places layers
+        ↓
+Initialize physics
+        ↓
+Optional visualization
+        ↓
+BeamOn / macro execution
+\end{verbatim}
+
+\section{Design Philosophy}
+
+\begin{itemize}
+    \item Modular geometry components
+    \item Configuration-driven simulation
+    \item Clear separation between geometry and run control
+    \item Support for rotated fibre layers
+    \item Extendable layer code system
+\end{itemize}
+
+\section{Extending the Simulation}
+
+To add a new layer:
+
+\begin{enumerate}
+    \item Define a new layer code
+    \item Extend \texttt{CalorimeterBuilder}
+    \item Implement a builder class
+    \item Update thickness calculations
+    \item Optionally define visual attributes
+\end{enumerate}
+
+\end{document}
