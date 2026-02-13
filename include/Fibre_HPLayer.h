@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 class GeoVPhysVol;
 class GeoLogVol;
@@ -11,6 +12,7 @@ public:
 static void build(GeoVPhysVol* mother,
                   GeoMaterial* aluminumMat,
                   GeoMaterial* fiberMat,
+                  std::string layering,
                   double zCenter_mm,
                   int layerIndex,
                   double casingXY_mm,
