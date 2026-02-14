@@ -48,7 +48,8 @@ CalorimeterConfig readConfigFile(const std::string& path)
     if      (key == "layers")             cfg.layers = parseIntList(val);
     else if (key == "plate_xy_mm")        cfg.plate_xy_mm = std::stod(val);
     else if (key == "lead_thickness_mm")  cfg.lead_thickness_mm = std::stod(val);
-    else if (key == "scint_thickness_mm") cfg.scint_thickness_mm = std::stod(val);
+    else if (key == "wide_scint_thickness_mm") cfg.wide_scint_thickness_mm = std::stod(val);
+    else if (key == "thin_scint_thickness_mm") cfg.thin_scint_thickness_mm = std::stod(val);
     else if (key == "center_stack") {
       std::string v = val;
       std::transform(v.begin(), v.end(), v.begin(), ::tolower);

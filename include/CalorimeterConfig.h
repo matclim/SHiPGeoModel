@@ -8,7 +8,8 @@ struct CalorimeterConfig {
 
   double plate_xy_mm = 2160.0;
   double lead_thickness_mm = 3.0;
-  double scint_thickness_mm = 10.0;
+  double wide_scint_thickness_mm = 10.0;
+  double thin_scint_thickness_mm = 10.0;
 
   bool center_stack = true;
   double airgap_mm = 1000.0;

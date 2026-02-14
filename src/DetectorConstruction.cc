@@ -55,45 +55,60 @@ GeoPhysVol* DetectorConstruction::buildGeoModelWorld()
   MaterialManager MM;
   auto* air = MM.air();
 
-  const double worldXY = 3.0 * GeoModelKernelUnits::m;
-  const double worldZ  = 6.0 * GeoModelKernelUnits::m;
+  auto cfg = readConfigFile(m_cfgFile);   // or however you access it here
+  
+  const int nx = std::max(1, cfg.module_nx);
+  const int ny = std::max(1, cfg.module_ny);
+  
+  const double plateXY = cfg.plate_xy_mm * GeoModelKernelUnits::mm;
+  const double halfModuleX = 0.5 * plateXY;
+  const double halfModuleY = 0.5 * plateXY;
+  
+  const double pitchX = (cfg.module_pitch_x_mm > 0 ? cfg.module_pitch_x_mm : cfg.plate_xy_mm) * GeoModelKernelUnits::mm;
+  const double pitchY = (cfg.module_pitch_y_mm > 0 ? cfg.module_pitch_y_mm : cfg.plate_xy_mm) * GeoModelKernelUnits::mm;
+  
+  // Z thickness from builder (mm -> GeoModel units)
+  const double stackZ = CalorimeterBuilder::totalThickness_mm(cfg) * GeoModelKernelUnits::mm;
+  const double halfStackZ = 0.5 * stackZ;
+  
+  // Margins
+  const double marginXY = 50.0 * GeoModelKernelUnits::mm;
+  const double marginZ  = 50.0 * GeoModelKernelUnits::mm;
+  
+  const double worldHalfX = 0.5 * (nx - 1) * pitchX + halfModuleX + marginXY;
+  const double worldHalfY = 0.5 * (ny - 1) * pitchY + halfModuleY + marginXY;
+  const double worldHalfZ = halfStackZ + marginZ;
 
-  auto* worldShape = new GeoBox(0.5*worldXY, 0.5*worldXY, 0.5*worldZ);
-  auto* worldLog   = new GeoLogVol("WorldLog", worldShape, air);
+  // Root volume
+  auto* worldShape = new GeoBox(worldHalfX, worldHalfY, worldHalfZ);
+  auto* worldLog   = new GeoLogVol("GMRootLog", worldShape, air);
   auto* worldPhys  = new GeoPhysVol(worldLog);
 
-  auto cfg = readConfigFile(m_cfgFile);
 
-const int nx = std::max(1, cfg.module_nx);
-const int ny = std::max(1, cfg.module_ny);
-
-const double pitchX = (cfg.module_pitch_x_mm > 0 ? cfg.module_pitch_x_mm : cfg.plate_xy_mm) * GeoModelKernelUnits::mm;
-const double pitchY = (cfg.module_pitch_y_mm > 0 ? cfg.module_pitch_y_mm : cfg.plate_xy_mm) * GeoModelKernelUnits::mm;
-
-// center the grid around (0,0)
-const double x0 = -0.5 * (nx - 1) * pitchX;
-const double y0 = -0.5 * (ny - 1) * pitchY;
-
-for (int ix = 0; ix < nx; ++ix) {
-  for (int iy = 0; iy < ny; ++iy) {
-    const int mx = ix + 1;   // 1..nx
-    const int my = iy + 1;   // 1..ny
-
-    const double x = x0 + ix * pitchX;
-    const double y = y0 + iy * pitchY;
-
-    // Make a module container volume (air box) and build into it
-    auto* modShape = new GeoBox(0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 3.0*GeoModelKernelUnits::m); // generous Z
-    auto* modLog   = new GeoLogVol("ModuleLog", modShape, MM.air());
-    auto* modPhys  = new GeoPhysVol(modLog);
-
-    worldPhys->add(new GeoNameTag(("MODULE_MX"+std::to_string(mx)+"Y"+std::to_string(my)).c_str()));
-    worldPhys->add(new GeoTransform(GeoTrf::Translate3D(x, y, 0)));
-    worldPhys->add(modPhys);
-
-    CalorimeterBuilder::buildStack(modPhys, MM, cfg, mx, my);
+  // center the grid around (0,0)
+  const double x0 = -0.5 * (nx - 1) * pitchX;
+  const double y0 = -0.5 * (ny - 1) * pitchY;
+  
+  for (int ix = 0; ix < nx; ++ix) {
+    for (int iy = 0; iy < ny; ++iy) {
+      const int mx = ix + 1;   // 1..nx
+      const int my = iy + 1;   // 1..ny
+  
+      const double x = x0 + ix * pitchX;
+      const double y = y0 + iy * pitchY;
+  
+      // Make a module container volume (air box) and build into it
+      auto* modShape = new GeoBox(0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 3.0*GeoModelKernelUnits::m); // generous Z
+      auto* modLog   = new GeoLogVol("ModuleLog", modShape, MM.air());
+      auto* modPhys  = new GeoPhysVol(modLog);
+  
+      worldPhys->add(new GeoNameTag(("MODULE_MX"+std::to_string(mx)+"Y"+std::to_string(my)).c_str()));
+      worldPhys->add(new GeoTransform(GeoTrf::Translate3D(x, y, 0)));
+      worldPhys->add(modPhys);
+  
+      CalorimeterBuilder::buildStack(modPhys, MM, cfg, mx, my);
+    }
   }
-}
 
   G4cout << "[DetectorConstruction] GeoModel world children = "
          << worldPhys->getNChildVols() << G4endl;

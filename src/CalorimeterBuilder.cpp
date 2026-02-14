@@ -14,6 +14,28 @@
 
 using namespace GeoModelKernelUnits;
 
+double CalorimeterBuilder::totalThickness_mm(const CalorimeterConfig& cfg)
+{
+    auto thicknessOf = [&](int code, bool isHcal) -> double {
+        switch (code) {
+          case 1: case 2: return cfg.wide_scint_thickness_mm;
+          case 3: case 4: return cfg.thin_scint_thickness_mm;
+          case 5: case 6: return cfg.hpl_thickness_mm;
+          case 7:         return isHcal ? cfg.iron_thickness_mm : cfg.lead_thickness_mm;
+          case 8:         return cfg.airgap_mm;   // if you have gaps
+          default:        return 0.0;
+        }
+    };
+
+    double z = 0.0;
+    for (int c : cfg.layers)  z += thicknessOf(c, /*isHcal=*/false);
+    for (int c : cfg.layers2) z += thicknessOf(c, /*isHcal=*/true);
+    z += cfg.gap_ecal_hcal ;
+    return z;
+}
+
+
+
 void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, const CalorimeterConfig& cfg, int mx, int my)
 {
   auto* leadMat = MM.lead();
@@ -22,10 +44,12 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
 
   const double plateXY = cfg.plate_xy_mm * mm;
   const double leadZ   = cfg.lead_thickness_mm * mm;
-  const double scintZ  = cfg.scint_thickness_mm * mm;
+  const double widescintZ  = cfg.wide_scint_thickness_mm * mm;
+  const double thinscintZ  = cfg.thin_scint_thickness_mm * mm;
   const double airGapZ = cfg.airgap_mm * mm;
 
   const double ironZ = cfg.iron_thickness_mm * mm;
+
 
   const double wideW = 60.0 * mm;
   const double thinW = 10.0 * mm;
@@ -54,19 +78,19 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   const std::string mtag = "_MX" + std::to_string(mx) + "Y" + std::to_string(my);
 
   // Wide PVT horizontal (along X)
-  auto* wideHShape = new GeoBox(0.5*wideW, 0.5*plateXY, 0.5*scintZ);
+  auto* wideHShape = new GeoBox(0.5*wideW, 0.5*plateXY, 0.5*widescintZ);
   auto* wideHLog   = new GeoLogVol("WidePVT_H_Log", wideHShape, pvtMat);
   
   // Wide PVT vertical (along Y)
-  auto* wideVShape = new GeoBox(0.5*plateXY, 0.5*wideW, 0.5*scintZ);
+  auto* wideVShape = new GeoBox(0.5*plateXY, 0.5*wideW, 0.5*widescintZ);
   auto* wideVLog   = new GeoLogVol("WidePVT_V_Log", wideVShape, pvtMat);
   
   // Thin PS horizontal
-  auto* thinHShape = new GeoBox(0.5*thinW, 0.5*plateXY, 0.5*scintZ);
+  auto* thinHShape = new GeoBox(0.5*thinW, 0.5*plateXY, 0.5*thinscintZ);
   auto* thinHLog   = new GeoLogVol("ThinPS_H_Log", thinHShape, psMat);
   
   // Thin PS vertical
-  auto* thinVShape = new GeoBox(0.5*plateXY, 0.5*thinW, 0.5*scintZ);
+  auto* thinVShape = new GeoBox(0.5*plateXY, 0.5*thinW, 0.5*thinscintZ);
   auto* thinVLog   = new GeoLogVol("ThinPS_V_Log", thinVShape, psMat);
 
 
@@ -80,19 +104,14 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   auto* ironLog   = new GeoLogVol("IronPlateLog", ironShape, MM.iron());
 
 
-  auto* wideShape = new GeoBox(0.5*(60.0*mm), 0.5*plateXY, 0.5*scintZ);
-  auto* wideLog   = new GeoLogVol("WidePVTBarLog", wideShape, pvtMat);
-
-  auto* thinShape = new GeoBox(0.5*(10.0*mm), 0.5*plateXY, 0.5*scintZ);
-  auto* thinLog   = new GeoLogVol("ThinPSBarLog", thinShape, psMat);
-
   // Total thickness for centering
   double totalZ = 0.0;
   
   // --- section 1: code 7 = lead ---
   for (int code : cfg.layers) {
     if (code == 7) totalZ += leadZ;
-    else if (code == 1 || code == 2 || code == 3 || code == 4) totalZ += scintZ;
+    else if (code == 1 || code == 2 ) totalZ += widescintZ;
+    else if (code == 3 || code == 4) totalZ += thinscintZ;
     else if (code == 5) totalZ += hplZ;
     else if (code == 6) totalZ += hplZ;
     else if (code == 8) totalZ += airGapZ;
@@ -102,7 +121,8 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   // --- section 2: code 7 = iron ---
   for (int code : cfg.layers2) {
     if (code == 7) totalZ += ironZ;
-    else if (code == 1 || code == 2 || code == 3 || code == 4) totalZ += scintZ;
+    else if (code == 1 || code == 2) totalZ += widescintZ;
+    else if (code == 3 || code == 4) totalZ += thinscintZ;
     else if (code == 5) totalZ += hplZ; 
     else if (code == 6) totalZ += hplZ; 
     else if (code == 8) totalZ += airGapZ;
@@ -136,14 +156,14 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
 
     }
     else if (code == 1) {
-        const double zCenter = zCursor + 0.5*scintZ;
+        const double zCenter = zCursor + 0.5*widescintZ;
 
         const std::string envName =
           "ECAL_GL" + std::to_string(globalLayer) +
           "_SL" + std::to_string(globalsensLayer) +
           "_WidePVT_H" + mtag;
         
-        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
+        auto* env = makeLayerEnv(world, envName, 0.5*widescintZ, zCenter);
         
         // place bars inside env at local z=0
         BarLayer::place(env, wideHLog, 60.0, 36,
@@ -153,21 +173,18 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
                          "_WidePVT_H").c_str(),
                         iWideH, BarAxis::AlongX, mtag);
         
-        zCursor += scintZ;
+        zCursor += widescintZ;
         ++iWideH;
         globalLayer++;
         globalsensLayer++;
     }
     else if (code == 2) {
-        const double zCenter = zCursor + 0.5*scintZ;
-        
+        const double zCenter = zCursor + 0.5*widescintZ;
         const std::string envName =
           "ECAL_GL" + std::to_string(globalLayer) +
           "_SL" + std::to_string(globalsensLayer) +
           "_WidePVT_V" + mtag;
-        
-        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
-        
+        auto* env = makeLayerEnv(world, envName, 0.5*widescintZ, zCenter);
         // place bars inside env at local z=0
         BarLayer::place(env, wideVLog, 60.0, 36,
                         /*zCenter_mm=*/0.0,
@@ -175,21 +192,20 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
                          "_SL"+std::to_string(globalsensLayer)+
                          "_WidePVT_V").c_str(),
                         iWideV, BarAxis::AlongY, mtag);
-        
-        zCursor += scintZ;
+        zCursor += widescintZ;
         ++iWideV;
         globalLayer++;
         globalsensLayer++;
     }
     else if (code == 3) {
-        const double zCenter = zCursor + 0.5*scintZ;
+        const double zCenter = zCursor + 0.5*thinscintZ;
         
         const std::string envName =
           "ECAL_GL" + std::to_string(globalLayer) +
           "_SL" + std::to_string(globalsensLayer) +
           "_ThinPS_H" + mtag;
         
-        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
+        auto* env = makeLayerEnv(world, envName, 0.5*thinscintZ, zCenter);
         
         // place bars inside env at local z=0
         BarLayer::place(env, thinHLog, 10.0, 216,
@@ -199,20 +215,20 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
                          "_ThinPS_H").c_str(),
                         iThinH, BarAxis::AlongX, mtag);
         
-        zCursor += scintZ;
+        zCursor += thinscintZ;
         ++iThinH;
         globalLayer++;
         globalsensLayer++;
     }
     else if (code == 4) {
-        const double zCenter = zCursor + 0.5*scintZ;
+        const double zCenter = zCursor + 0.5*thinscintZ;
         
         const std::string envName =
           "ECAL_GL" + std::to_string(globalLayer) +
           "_SL" + std::to_string(globalsensLayer) +
           "_ThinPS_V" + mtag;
         
-        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
+        auto* env = makeLayerEnv(world, envName, 0.5*thinscintZ, zCenter);
         
         // place bars inside env at local z=0
         BarLayer::place(env, thinVLog, 10.0, 216,
@@ -222,7 +238,7 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
                          "_ThinPS_V").c_str(),
                         iThinH, BarAxis::AlongY, mtag);
         
-        zCursor += scintZ;
+        zCursor += thinscintZ;
         ++iThinV;
         globalLayer++;
         globalsensLayer++;
@@ -350,22 +366,22 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
     }
   
     else if (code == 1) {
-        const double zCenter = zCursor + 0.5*scintZ;
+        const double zCenter = zCursor + 0.5*widescintZ;
         BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm,
           ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_H").c_str(),
           iWideV, BarAxis::AlongX, mtag);
-        zCursor += scintZ;
+        zCursor += widescintZ;
         ++iWideV;
         globalsensLayer++;
         globalLayer++;
     }
   
     else if (code == 2) {
-        const double zCenter = zCursor + 0.5*scintZ;
+        const double zCenter = zCursor + 0.5*widescintZ;
         BarLayer::place(world, wideVLog, 60.0, 36, zCenter/mm,
           ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_V").c_str(),
           iWideV, BarAxis::AlongY, mtag);
-        zCursor += scintZ;
+        zCursor += widescintZ;
         ++iWideV;
         globalsensLayer++;
         globalLayer++;
