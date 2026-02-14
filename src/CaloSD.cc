@@ -94,5 +94,18 @@ ParsedID CaloSD::parse(const std::string& name) {
     if (std::regex_search(name, m, reF)) out.hpl_sublayer = std::stoi(m[1]);
   }
 
+  {
+    std::regex re("_MX([0-9]+)Y([0-9]+)$");
+    std::smatch m;
+    if (std::regex_search(name, m, re)) {
+      const int mx = std::stoi(m[1]);
+      const int my = std::stoi(m[2]);
+      out.hexant = 10*mx + my;
+    } else {
+      out.hexant = 11; // fallback
+    }
+  }
+
+
   return out;
 }

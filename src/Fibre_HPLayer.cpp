@@ -21,7 +21,9 @@ void Fibre_HPLayer::build(GeoVPhysVol* mother,
                           double casingXY_mm,
                           double casingZ_mm,
                           double fiberDiam_mm,
-                          bool fibresAlongY)
+                          bool fibresAlongY,
+                          const std::string& nameSuffix
+                          )
 {
   // --- casing dimensions ---
   const double casingXY = casingXY_mm * mm;
@@ -34,8 +36,7 @@ void Fibre_HPLayer::build(GeoVPhysVol* mother,
   auto* casingPhys  = new GeoPhysVol(casingLog);
 
   
-
-  mother->add(new GeoNameTag(("HPL_" + std::to_string(layerIndex)).c_str()));
+  mother->add(new GeoNameTag((layering + "_HPL_Casing" + nameSuffix).c_str()));
   mother->add(new GeoTransform(GeoTrf::Translate3D(0, 0, zCenter_mm * mm)));
   mother->add(casingPhys);
 
@@ -82,7 +83,7 @@ void Fibre_HPLayer::build(GeoVPhysVol* mother,
       // Optional: NameTags are heavy, but very useful for debugging.
       // If gmex gets sluggish, remove NameTags for fibers.
       casingPhys->add(new GeoNameTag(
-        (layering+"_HPL_" + Orientation_String + std::to_string(layerIndex) + "_S" + std::to_string(s) + "_F" + std::to_string(i)).c_str()
+        (layering+"_HPL_" + Orientation_String + std::to_string(layerIndex) + "_S" + std::to_string(s) + "_F" + std::to_string(i) + nameSuffix).c_str()
       ));
       // If fibres run along Y, we pack them in X (x varies).
       // If fibres run along X, we pack them in Y (y varies).

@@ -16,7 +16,9 @@ void BarLayer::place(GeoVPhysVol* mother,
                      double       zCenter_mm,
                      const char*  tagPrefix,
                      int          layerIndex,
-                     BarAxis      axis)
+                     BarAxis      axis,
+                     const std::string& nameSuffix
+                     )
 {
   const double pitch = pitch_mm * mm;
   const double s0 = -0.5 * (nBars - 1) * pitch;
@@ -29,6 +31,13 @@ void BarLayer::place(GeoVPhysVol* mother,
     else                        y = s;
 
     auto* barPhys = new GeoPhysVol(barLog);
+
+    mother->add(new GeoNameTag(
+      (std::string(tagPrefix)
+      + "_L" + std::to_string(layerIndex)
+      + "_B" + std::to_string(i)
+      + nameSuffix).c_str()
+    ));
 
     mother->add(new GeoNameTag((std::string(tagPrefix) + "_L" + std::to_string(layerIndex) +
                                "_B" + std::to_string(i)).c_str()));

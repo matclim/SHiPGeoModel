@@ -18,6 +18,8 @@ static void build(GeoVPhysVol* mother,
                   double casingXY_mm,
                   double casingZ_mm,
                   double fiberDiam_mm,
-                  bool fibresAlongY = true);
+                  bool fibresAlongY = true,
+                  const std::string& nameSuffix = "" 
+                  );
 
 };

@@ -21,4 +21,9 @@ struct CalorimeterConfig {
 
   double gap_ecal_hcal = 0;
 
+  int module_nx = 1;
+  int module_ny = 1;
+  
+  double module_pitch_x_mm = 0.0; // if 0 -> use plate_xy_mm
+  double module_pitch_y_mm = 0.0; // if 0 -> use plate_xy_mm
 };

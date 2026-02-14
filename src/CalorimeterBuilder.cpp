@@ -14,7 +14,7 @@
 
 using namespace GeoModelKernelUnits;
 
-void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, const CalorimeterConfig& cfg)
+void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, const CalorimeterConfig& cfg, int mx, int my)
 {
   auto* leadMat = MM.lead();
   auto* pvtMat  = MM.pvt();
@@ -31,6 +31,8 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   const double thinW = 10.0 * mm;
 
   const double hplZ    = cfg.hpl_thickness_mm * mm;
+
+  const std::string mtag = "_MX" + std::to_string(mx) + "Y" + std::to_string(my);
 
   // Wide PVT horizontal (along X)
   auto* wideHShape = new GeoBox(0.5*wideW, 0.5*plateXY, 0.5*scintZ);
@@ -106,14 +108,15 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
     }
     else if (code == 1) {
       const double zCenter = zCursor + 0.5*scintZ;
-      BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm, ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_H").c_str(), iWideH, BarAxis::AlongX);
+     // BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm, ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_H").c_str(), iWideH, BarAxis::AlongX);
+      BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm,("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_H").c_str(),iWideH, BarAxis::AlongX, mtag);
       zCursor += scintZ; ++iWideH;
       globalLayer++;
       globalsensLayer++;
     }
     else if (code == 2) {
       const double zCenter = zCursor + 0.5*scintZ;
-      BarLayer::place(world, wideVLog, 60.0, 36, zCenter/mm, ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_V").c_str(), iWideV, BarAxis::AlongY);
+      BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm,("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_V").c_str(),iWideV, BarAxis::AlongX, mtag);
       zCursor += scintZ; ++iWideV;
       globalLayer++;
       globalsensLayer++;
@@ -134,15 +137,12 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
     }
     else if (code == 5) {
       const double zCenter = zCursor + 0.5*hplZ;
-      Fibre_HPLayer::build(world,
-                           MM.aluminum(),
-                           MM.polystyrene(),
-                           ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)).c_str(),
-                           zCenter/mm,
-                           iHPL,
-                           cfg.plate_xy_mm,
-                           cfg.hpl_thickness_mm,
-                           cfg.fiber_diameter_mm);
+     Fibre_HPLayer::build(world, MM.aluminum(), MM.polystyrene(),
+                     ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)).c_str(),
+                     zCenter/mm, iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
+                     cfg.fiber_diameter_mm,
+                     /*fibresAlongY=*/true,
+                     mtag); 
       zCursor += hplZ;
       ++iHPL;
       globalLayer++;
@@ -150,16 +150,12 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
     }
     else if (code == 6) {
       const double zCenter = zCursor + 0.5*hplZ;
-      Fibre_HPLayer::build(world,
-                           MM.aluminum(),
-                           MM.polystyrene(),
+      Fibre_HPLayer::build(world, MM.aluminum(), MM.polystyrene(),
                            ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)).c_str(),
-                           zCenter/mm,
-                           iHPL,
-                           cfg.plate_xy_mm,
-                           cfg.hpl_thickness_mm,
+                           zCenter/mm, iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
                            cfg.fiber_diameter_mm,
-                           /*fibresAlongY=*/false);   // <-- rotated 90° (run along X)
+                           /*fibresAlongY=*/false,
+                           mtag);
       zCursor += hplZ;
       ++iHPL;
       globalLayer++;

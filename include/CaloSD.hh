@@ -23,7 +23,7 @@ struct ParsedID {
   int vol = -1;   // bar index or fibre index (your "volume number")
   int hcal = -1;
   int hpl_sublayer = -1;
-  int hexant = -1;
+  int hexant = 11;
 };
 
 class EventStore; // forward

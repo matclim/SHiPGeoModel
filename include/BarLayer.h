@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 class GeoVPhysVol;
 class GeoLogVol;
 
@@ -13,5 +14,7 @@ public:
                     double       zCenter_mm,
                     const char*  tagPrefix,
                     int          layerIndex,
-                    BarAxis      axis);
+                    BarAxis      axis,
+                    const std::string& nameSuffix = ""
+                    );
 };

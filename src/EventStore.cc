@@ -15,4 +15,5 @@ void EventStore::addHit(const ParsedID& id, double e, const G4ThreeVector& p) {
   vol.push_back(id.vol);
   hcal.push_back(id.hcal);
   hpl_sublayer.push_back(id.hpl_sublayer);
+  hexant.push_back(id.hexant);
 }
