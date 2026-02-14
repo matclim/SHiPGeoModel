@@ -32,6 +32,25 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
 
   const double hplZ    = cfg.hpl_thickness_mm * mm;
 
+  auto makeLayerEnv = [&](GeoVPhysVol* module,
+                          const std::string& envName,
+                          double halfZ,          // in GeoModel length units (already *mm)
+                          double zCenter) -> GeoPhysVol*
+  {
+      auto* envShape = new GeoBox(0.5*plateXY, 0.5*plateXY, halfZ);
+      auto* envLog   = new GeoLogVol((envName + "_LOG").c_str(), envShape, MM.air());
+      auto* envPhys  = new GeoPhysVol(envLog);
+  
+      module->add(new GeoNameTag(envName.c_str()));
+      module->add(new GeoTransform(GeoTrf::Translate3D(0, 0, zCenter)));
+      module->add(envPhys);
+  
+      return envPhys;
+  };
+
+
+
+
   const std::string mtag = "_MX" + std::to_string(mx) + "Y" + std::to_string(my);
 
   // Wide PVT horizontal (along X)
@@ -98,68 +117,163 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   int globalLayer = 0;
   for (int code : cfg.layers) {
     if (code == 7) {
-      auto* platePhys = new GeoPhysVol(leadLog);
-      world->add(new GeoNameTag(("ECAL_GL_"+std::to_string(globalLayer)+"Lead_" + std::to_string(iLead)).c_str()));
-      world->add(new GeoTransform(GeoTrf::Translate3D(0, 0, zCursor + 0.5*leadZ)));
-      world->add(platePhys);
-      zCursor += leadZ;
-      ++iLead;
-      globalLayer++;
+        const double zCenter = zCursor + 0.5*leadZ;
+        const std::string envName =
+          "ECAL_GL" + std::to_string(globalLayer) +
+          "_Lead" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*leadZ, zCenter);
+        
+        auto* platePhys = new GeoPhysVol(leadLog);
+        env->add(new GeoNameTag((envName).c_str()));
+        env->add(new GeoTransform(GeoTrf::Translate3D(0,0,0)));
+        env->add(platePhys);
+        
+        zCursor += leadZ;
+        ++iLead;
+        globalLayer++;
+
+
     }
     else if (code == 1) {
-      const double zCenter = zCursor + 0.5*scintZ;
-     // BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm, ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_H").c_str(), iWideH, BarAxis::AlongX);
-      BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm,("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_H").c_str(),iWideH, BarAxis::AlongX, mtag);
-      zCursor += scintZ; ++iWideH;
-      globalLayer++;
-      globalsensLayer++;
+        const double zCenter = zCursor + 0.5*scintZ;
+
+        const std::string envName =
+          "ECAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_WidePVT_H" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
+        
+        // place bars inside env at local z=0
+        BarLayer::place(env, wideHLog, 60.0, 36,
+                        /*zCenter_mm=*/0.0,
+                        ("ECAL_GL"+std::to_string(globalLayer)+
+                         "_SL"+std::to_string(globalsensLayer)+
+                         "_WidePVT_H").c_str(),
+                        iWideH, BarAxis::AlongX, mtag);
+        
+        zCursor += scintZ;
+        ++iWideH;
+        globalLayer++;
+        globalsensLayer++;
     }
     else if (code == 2) {
-      const double zCenter = zCursor + 0.5*scintZ;
-      BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm,("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_V").c_str(),iWideV, BarAxis::AlongX, mtag);
-      zCursor += scintZ; ++iWideV;
-      globalLayer++;
-      globalsensLayer++;
+        const double zCenter = zCursor + 0.5*scintZ;
+        
+        const std::string envName =
+          "ECAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_WidePVT_V" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
+        
+        // place bars inside env at local z=0
+        BarLayer::place(env, wideHLog, 60.0, 36,
+                        /*zCenter_mm=*/0.0,
+                        ("ECAL_GL"+std::to_string(globalLayer)+
+                         "_SL"+std::to_string(globalsensLayer)+
+                         "_WidePVT_V").c_str(),
+                        iWideV, BarAxis::AlongY, mtag);
+        
+        zCursor += scintZ;
+        ++iWideV;
+        globalLayer++;
+        globalsensLayer++;
     }
     else if (code == 3) {
-      const double zCenter = zCursor + 0.5*scintZ;
-      BarLayer::place(world, thinHLog, 10.0, 216, zCenter/mm, ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_ThinPS_H").c_str(), iThinH, BarAxis::AlongX);
-      zCursor += scintZ; ++iThinH;
-      globalLayer++;
-      globalsensLayer++;
+        const double zCenter = zCursor + 0.5*scintZ;
+        
+        const std::string envName =
+          "ECAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_ThinPS_H" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
+        
+        // place bars inside env at local z=0
+        BarLayer::place(env, thinHLog, 10.0, 216,
+                        /*zCenter_mm=*/0.0,
+                        ("ECAL_GL"+std::to_string(globalLayer)+
+                         "_SL"+std::to_string(globalsensLayer)+
+                         "_ThinPS_H").c_str(),
+                        iThinH, BarAxis::AlongX, mtag);
+        
+        zCursor += scintZ;
+        ++iThinH;
+        globalLayer++;
+        globalsensLayer++;
     }
     else if (code == 4) {
-      const double zCenter = zCursor + 0.5*scintZ;
-      BarLayer::place(world, thinVLog, 10.0, 216, zCenter/mm, ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_ThinPS_V").c_str(), iThinV, BarAxis::AlongY);
-      zCursor += scintZ; ++iThinV;
-      globalLayer++;
-      globalsensLayer++;
+        const double zCenter = zCursor + 0.5*scintZ;
+        
+        const std::string envName =
+          "ECAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_ThinPS_V" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
+        
+        // place bars inside env at local z=0
+        BarLayer::place(env, thinVLog, 10.0, 216,
+                        /*zCenter_mm=*/0.0,
+                        ("ECAL_GL"+std::to_string(globalLayer)+
+                         "_SL"+std::to_string(globalsensLayer)+
+                         "_ThinPS_V").c_str(),
+                        iThinH, BarAxis::AlongY, mtag);
+        
+        zCursor += scintZ;
+        ++iThinV;
+        globalLayer++;
+        globalsensLayer++;
     }
     else if (code == 5) {
-      const double zCenter = zCursor + 0.5*hplZ;
-     Fibre_HPLayer::build(world, MM.aluminum(), MM.polystyrene(),
-                     ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)).c_str(),
-                     zCenter/mm, iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
-                     cfg.fiber_diameter_mm,
-                     /*fibresAlongY=*/true,
-                     mtag); 
-      zCursor += hplZ;
-      ++iHPL;
-      globalLayer++;
-      globalsensLayer++;
+        const double zCenter = zCursor + 0.5*hplZ;
+
+        const std::string envName =
+          "ECAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_HPL" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*hplZ, zCenter);
+        
+        Fibre_HPLayer::build(env, MM.aluminum(), MM.polystyrene(),
+                             ("ECAL_GL"+std::to_string(globalLayer)+
+                              "_SL"+std::to_string(globalsensLayer)).c_str(),
+                             /*zCenter_mm=*/0.0,
+                             iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
+                             cfg.fiber_diameter_mm,
+                             /*fibresAlongY=*/true,
+                             mtag);
+        
+        zCursor += hplZ;
+        ++iHPL;
+        globalLayer++;
+        globalsensLayer++;
     }
     else if (code == 6) {
-      const double zCenter = zCursor + 0.5*hplZ;
-      Fibre_HPLayer::build(world, MM.aluminum(), MM.polystyrene(),
-                           ("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)).c_str(),
-                           zCenter/mm, iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
-                           cfg.fiber_diameter_mm,
-                           /*fibresAlongY=*/false,
-                           mtag);
-      zCursor += hplZ;
-      ++iHPL;
-      globalLayer++;
-      globalsensLayer++;
+        const double zCenter = zCursor + 0.5*hplZ;
+        
+        const std::string envName =
+          "ECAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_HPL" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*hplZ, zCenter);
+        
+        Fibre_HPLayer::build(env, MM.aluminum(), MM.polystyrene(),
+                             ("ECAL_GL"+std::to_string(globalLayer)+
+                              "_SL"+std::to_string(globalsensLayer)).c_str(),
+                             /*zCenter_mm=*/0.0,
+                             iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
+                             cfg.fiber_diameter_mm,
+                             /*fibresAlongY=*/false,
+                             mtag);
+        
+        zCursor += hplZ;
+        ++iHPL;
+        globalLayer++;
+        globalsensLayer++;
     }
     else if (code == 8) {
       // airgap: no volume needed; just advance z

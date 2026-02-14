@@ -8,3 +8,14 @@ make
 gmex geometry.db
 
 changes in calo.cfg should be reflected in the geometry after running
+
+
+#Instruction for simulation run
+
+mkdir build
+cd build
+cmake ..
+make
+./run_g4
+
+you can change parameters in .cfg files
