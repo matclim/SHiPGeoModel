@@ -55,7 +55,7 @@ GeoPhysVol* DetectorConstruction::buildGeoModelWorld()
   MaterialManager MM;
   auto* air = MM.air();
 
-  auto cfg = readConfigFile(m_cfgFile);   // or however you access it here
+  cfg = readConfigFile(m_cfgFile);   // or however you access it here
   
   const int nx = std::max(1, cfg.module_nx);
   const int ny = std::max(1, cfg.module_ny);
@@ -96,9 +96,18 @@ GeoPhysVol* DetectorConstruction::buildGeoModelWorld()
   
       const double x = x0 + ix * pitchX;
       const double y = y0 + iy * pitchY;
-  
+ 
+      const double stackZ = CalorimeterBuilder::totalThickness_mm(cfg) * GeoModelKernelUnits::mm;
+
+      const double marginZ = 50.0 * GeoModelKernelUnits::mm; // small safety margin
+      const double modHalfZ = 0.5*stackZ + marginZ;
+
       // Make a module container volume (air box) and build into it
-      auto* modShape = new GeoBox(0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 3.0*GeoModelKernelUnits::m); // generous Z
+      auto* modShape = new GeoBox(0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm,
+                            0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm,
+                            modHalfZ);
+
+
       auto* modLog   = new GeoLogVol("ModuleLog", modShape, MM.air());
       auto* modPhys  = new GeoPhysVol(modLog);
   
@@ -125,8 +134,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   auto* nist = G4NistManager::Instance();
   auto* g4Air = nist->FindOrBuildMaterial("G4_AIR");
 
-  const auto worldXY = 3.0 * CLHEP::m;
-  const auto worldZ  = 6.0 * CLHEP::m;
+
+
+  const int nx = std::max(1, cfg.module_nx);
+  const int ny = std::max(1, cfg.module_ny);
+  
+  const double plateXY = cfg.plate_xy_mm * GeoModelKernelUnits::mm;
+  const double halfModuleX = 0.5 * plateXY;
+  const double halfModuleY = 0.5 * plateXY;
+  
+  const auto worldXY = static_cast<double>(std::max(nx,ny) * plateXY);
+
+  const double stackZ = CalorimeterBuilder::totalThickness_mm(cfg) * GeoModelKernelUnits::mm;
+  const auto worldZ  = stackZ;
 
   auto* solidWorld = new G4Box("WorldSolid", 0.5*worldXY, 0.5*worldXY, 0.5*worldZ);
   auto* lvWorld    = new G4LogicalVolume(solidWorld, g4Air, "WorldLV");

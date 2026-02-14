@@ -2,6 +2,8 @@
 
 #include "G4VUserDetectorConstruction.hh"
 #include <string>
+#include "CalorimeterConfig.h"
+
 
 #include <memory>
 class Geo2G4AssemblyVolume;
@@ -28,4 +30,5 @@ private:
   GeoPhysVol*  m_geoWorld = nullptr;  // GeoModel world built in memory
 
   GeoPhysVol* buildGeoModelWorld();   // builds from calo.cfg
+  CalorimeterConfig cfg; 
 };

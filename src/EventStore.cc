@@ -2,9 +2,20 @@
 #include "G4SystemOfUnits.hh"
 
 void EventStore::clear() {
-  edep.clear(); x.clear(); y.clear(); z.clear();
-  type.clear(); section.clear(); layer.clear(); vol.clear();
+  edep.clear();
+  x.clear();
+  y.clear();
+  z.clear();
+  type.clear();
+  section.clear();
+  layer.clear();
+  vol.clear();
+
+  hcal.clear();
+  hpl_sublayer.clear();
+  hexant.clear();
 }
+
 
 void EventStore::addHit(const ParsedID& id, double e, const G4ThreeVector& p) {
   edep.push_back(e);         // in Geant4 energy units (MeV by default)

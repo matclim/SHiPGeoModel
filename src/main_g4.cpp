@@ -88,12 +88,11 @@ int main(int argc, char** argv)
       // (keep your old interactive branch if you still want it)
     }
   }
+  if (vis != nullptr) {
+    delete vis;
+    vis = nullptr;
+  }
 
-delete vis;
-   if (!run.macro.empty()) {
-  }  
-
-  delete vis;
   delete runManager;
   delete store;
   return 0;
