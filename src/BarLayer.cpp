@@ -41,7 +41,6 @@ void BarLayer::place(GeoVPhysVol* mother,
 
     mother->add(new GeoNameTag((std::string(tagPrefix) + "_L" + std::to_string(layerIndex) +
                                "_B" + std::to_string(i)).c_str()));
-    mother->add(new GeoTransform(GeoTrf::Translate3D(x, y, zCenter_mm * mm)));
     mother->add(barPhys);
   }
 }

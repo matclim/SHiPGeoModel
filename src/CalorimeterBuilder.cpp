@@ -169,7 +169,7 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
         auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
         
         // place bars inside env at local z=0
-        BarLayer::place(env, wideHLog, 60.0, 36,
+        BarLayer::place(env, wideVLog, 60.0, 36,
                         /*zCenter_mm=*/0.0,
                         ("ECAL_GL"+std::to_string(globalLayer)+
                          "_SL"+std::to_string(globalsensLayer)+
@@ -291,62 +291,84 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   
     if (code == 7) {
       auto* ironPhys = new GeoPhysVol(ironLog);
-      world->add(new GeoNameTag((("ECAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer))+"_Iron_" + std::to_string(iIron)).c_str()));
+      world->add(new GeoNameTag((("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer))+"_Iron_" + std::to_string(iIron)).c_str()));
       world->add(new GeoTransform(GeoTrf::Translate3D(0, 0, zCursor + 0.5*ironZ)));
       world->add(ironPhys);
       zCursor += ironZ;
       ++iIron;
       globalLayer++;
     }
-    else if (code == 6) {
-      const double zCenter = zCursor + 0.5*hplZ;
-      Fibre_HPLayer::build(world,
-                           MM.aluminum(),
-                           MM.polystyrene(),
-                           ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)).c_str(),
-                           zCenter/mm,
-                           iHPL,
-                           cfg.plate_xy_mm,
-                           cfg.hpl_thickness_mm,
-                           cfg.fiber_diameter_mm,
-                           /*fibresAlongY=*/false);   // <-- rotated 90° (run along X)
-      zCursor += hplZ;
-      ++iHPL;
-      globalsensLayer++;
-      globalLayer++;
-    }
     else if (code == 5) {
-      const double zCenter = zCursor + 0.5*hplZ;
-      Fibre_HPLayer::build(world,
-                           MM.aluminum(),
-                           MM.polystyrene(),
-                           ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)).c_str(),
-                           zCenter/mm,
-                           iHPL,
-                           cfg.plate_xy_mm,
-                           cfg.hpl_thickness_mm,
-                           cfg.fiber_diameter_mm,
-                           /*fibresAlongY=*/false);   // <-- rotated 90° (run along X)
-      zCursor += hplZ;
-      ++iHPL;
-      globalsensLayer++;
-      globalLayer++;
+        const double zCenter = zCursor + 0.5*hplZ;
+
+        const std::string envName =
+          "HCAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_HPL" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*hplZ, zCenter);
+        
+        Fibre_HPLayer::build(env, MM.aluminum(), MM.polystyrene(),
+                             ("HCAL_GL"+std::to_string(globalLayer)+
+                              "_SL"+std::to_string(globalsensLayer)).c_str(),
+                             /*zCenter_mm=*/0.0,
+                             iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
+                             cfg.fiber_diameter_mm,
+                             /*fibresAlongY=*/true,
+                             mtag);
+        
+        zCursor += hplZ;
+        ++iHPL;
+        globalLayer++;
+        globalsensLayer++;
+    
+    }
+    else if (code == 6) {
+        const double zCenter = zCursor + 0.5*hplZ;
+        
+        const std::string envName =
+          "HCAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_HPL" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*hplZ, zCenter);
+        
+        Fibre_HPLayer::build(env, MM.aluminum(), MM.polystyrene(),
+                             ("HCAL_GL"+std::to_string(globalLayer)+
+                              "_SL"+std::to_string(globalsensLayer)).c_str(),
+                             /*zCenter_mm=*/0.0,
+                             iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
+                             cfg.fiber_diameter_mm,
+                             /*fibresAlongY=*/false,
+                             mtag);
+        
+        zCursor += hplZ;
+        ++iHPL;
+        globalLayer++;
+        globalsensLayer++;
+   
     }
   
     else if (code == 1) {
-      const double zCenter = zCursor + 0.5*scintZ;
-      BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm, ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_H").c_str(), iWideH, BarAxis::AlongX);
-      zCursor += scintZ; ++iWideH;
-      globalsensLayer++;
-      globalLayer++;
+        const double zCenter = zCursor + 0.5*scintZ;
+        BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm,
+          ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_H").c_str(),
+          iWideV, BarAxis::AlongX, mtag);
+        zCursor += scintZ;
+        ++iWideV;
+        globalsensLayer++;
+        globalLayer++;
     }
   
     else if (code == 2) {
-      const double zCenter = zCursor + 0.5*scintZ;
-      BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm, ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_V").c_str(), iWideH, BarAxis::AlongX);
-      zCursor += scintZ; ++iWideV;
-      globalsensLayer++;
-      globalLayer++;
+        const double zCenter = zCursor + 0.5*scintZ;
+        BarLayer::place(world, wideVLog, 60.0, 36, zCenter/mm,
+          ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_V").c_str(),
+          iWideV, BarAxis::AlongY, mtag);
+        zCursor += scintZ;
+        ++iWideV;
+        globalsensLayer++;
+        globalLayer++;
     }
   
     // optional: allow air gaps in iron section too
