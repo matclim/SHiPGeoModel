@@ -350,25 +350,54 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
     }
   
     else if (code == 1) {
+
         const double zCenter = zCursor + 0.5*scintZ;
-        BarLayer::place(world, wideHLog, 60.0, 36, zCenter/mm,
-          ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_H").c_str(),
-          iWideV, BarAxis::AlongX, mtag);
+
+        const std::string envName =
+          "HCAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_WidePVT_H" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
+        
+        // place bars inside env at local z=0
+        BarLayer::place(env, wideHLog, 60.0, 36,
+                        /*zCenter_mm=*/0.0,
+                        ("HCAL_GL"+std::to_string(globalLayer)+
+                         "_SL"+std::to_string(globalsensLayer)+
+                         "_WidePVT_H").c_str(),
+                        iWideH, BarAxis::AlongX, mtag);
+        
         zCursor += scintZ;
-        ++iWideV;
-        globalsensLayer++;
+        ++iWideH;
         globalLayer++;
+        globalsensLayer++;
     }
-  
+
     else if (code == 2) {
+
         const double zCenter = zCursor + 0.5*scintZ;
-        BarLayer::place(world, wideVLog, 60.0, 36, zCenter/mm,
-          ("HCAL_GL"+std::to_string(globalLayer)+"_SL"+std::to_string(globalsensLayer)+"_WidePVT_V").c_str(),
-          iWideV, BarAxis::AlongY, mtag);
+        
+        const std::string envName =
+          "ECAL_GL" + std::to_string(globalLayer) +
+          "_SL" + std::to_string(globalsensLayer) +
+          "_WidePVT_V" + mtag;
+        
+        auto* env = makeLayerEnv(world, envName, 0.5*scintZ, zCenter);
+        
+        // place bars inside env at local z=0
+        BarLayer::place(env, wideVLog, 60.0, 36,
+                        /*zCenter_mm=*/0.0,
+                        ("ECAL_GL"+std::to_string(globalLayer)+
+                         "_SL"+std::to_string(globalsensLayer)+
+                         "_WidePVT_V").c_str(),
+                        iWideV, BarAxis::AlongY, mtag);
+        
         zCursor += scintZ;
         ++iWideV;
-        globalsensLayer++;
         globalLayer++;
+        globalsensLayer++;
+
     }
   
     // optional: allow air gaps in iron section too
