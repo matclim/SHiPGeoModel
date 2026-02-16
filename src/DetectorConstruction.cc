@@ -77,9 +77,14 @@ GeoPhysVol* DetectorConstruction::buildGeoModelWorld()
 
   auto cfg = readConfigFile(m_cfgFile);
   
-
-  const double worldXY = cfg.plate_xy_mm * std::max(cfg.module_nx,cfg.module_ny) * GeoModelKernelUnits::mm;
-  const double worldZ  = 6.0 * GeoModelKernelUnits::m;
+  double aworldZ = GetSystemThickness(cfg.layers,cfg.scint_thickness_mm,cfg.scint_thickness_mm,cfg.hpl_thickness_mm,cfg.lead_thickness_mm,cfg.airgap_mm);
+  aworldZ += cfg.gap_ecal_hcal_mm;
+  aworldZ += GetSystemThickness(cfg.layers2,cfg.scint_thickness_mm,cfg.scint_thickness_mm,cfg.hpl_thickness_mm,cfg.iron_thickness_mm,cfg.airgap_mm);
+  
+    
+  const double worldZ = (aworldZ +cfg.tol_z_mm+ 5000) * GeoModelKernelUnits::mm; //Need to add 5000 to ensure that the world contains the initial particles / PG 
+  const double worldXY = (cfg.plate_xy_mm + std::max(cfg.tol_x_mm,cfg.tol_y_mm)) * std::max(cfg.module_nx,cfg.module_ny) * GeoModelKernelUnits::mm;
+//  const double worldZ  = 6.0 * GeoModelKernelUnits::m;
 
   auto* worldShape = new GeoBox(0.5*worldXY, 0.5*worldXY, 0.5*worldZ);
   auto* worldLog   = new GeoLogVol("WorldLog", worldShape, air);
@@ -105,7 +110,8 @@ for (int ix = 0; ix < nx; ++ix) {
     const double y = y0 + iy * pitchY;
 
     // Make a module container volume (air box) and build into it
-    auto* modShape = new GeoBox(0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 3.0*GeoModelKernelUnits::m); // generous Z
+    // Need to have the modified aworldZ  aworldZ += 100 * GeoModelKernelUnits::mm; otherwise the envelop is too small !?
+    auto* modShape = new GeoBox(0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 0.5*cfg.plate_xy_mm*GeoModelKernelUnits::mm, 0.5*aworldZ*GeoModelKernelUnits::mm); // generous Z
     auto* modLog   = new GeoLogVol("ModuleLog", modShape, MM.air());
     auto* modPhys  = new GeoPhysVol(modLog);
 
@@ -129,16 +135,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   m_geoWorld = buildGeoModelWorld();
 
   //  Create a Geant4 world (mother volume) 
-  auto* nist = G4NistManager::Instance();
-  auto* g4Air = nist->FindOrBuildMaterial("G4_AIR");
-
-  const auto worldXY = 3.0 * CLHEP::m;
-  const auto worldZ  = 6.0 * CLHEP::m;
-
-  auto* solidWorld = new G4Box("WorldSolid", 0.5*worldXY, 0.5*worldXY, 0.5*worldZ);
-  auto* lvWorld    = new G4LogicalVolume(solidWorld, g4Air, "WorldLV");
-
-
   //  Convert GeoModel tree into an Assembly and imprint into lvWorld 
   bool ok = true;                 // builder doesn’t take ok in this API
   PVConstLink worldLink = m_geoWorld;

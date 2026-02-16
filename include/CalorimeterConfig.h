@@ -19,11 +19,15 @@ struct CalorimeterConfig {
   std::vector<int> layers2;
   double iron_thickness_mm = 170.0;
 
-  double gap_ecal_hcal = 0;
+  double gap_ecal_hcal_mm = 0;
 
   int module_nx = 1;
   int module_ny = 1;
   
   double module_pitch_x_mm = 0.0; // if 0 -> use plate_xy_mm
   double module_pitch_y_mm = 0.0; // if 0 -> use plate_xy_mm
+
+  double tol_x_mm = 10;
+  double tol_y_mm = 10;
+  double tol_z_mm = 10;
 };

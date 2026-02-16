@@ -98,7 +98,7 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
     else if (code == 8) totalZ += airGapZ;
     else throw std::runtime_error("Unknown layer code in layers: " + std::to_string(code));
   }
-  
+  totalZ += cfg.gap_ecal_hcal_mm; 
   // --- section 2: code 7 = iron ---
   for (int code : cfg.layers2) {
     if (code == 7) totalZ += ironZ;
@@ -283,7 +283,7 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
   }
   int iIron = 0;  // iron counter
  
-  zCursor += cfg.gap_ecal_hcal;
+  zCursor += cfg.gap_ecal_hcal_mm;
     
   globalLayer=0;
   globalsensLayer=0;
