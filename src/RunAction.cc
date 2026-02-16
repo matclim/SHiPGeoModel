@@ -7,6 +7,14 @@ RunAction::RunAction() {
   man->SetFileName("calosim_out");
 }
 
+
+RunAction::RunAction(int Beamenergy) {
+  auto* man = G4AnalysisManager::Instance();
+  man->SetDefaultFileType("root");
+  man->SetFileName("calosim_out_"+std::to_string(Beamenergy)+"MeV");
+}
+
+
 RunAction::~RunAction() {
   delete G4AnalysisManager::Instance();
 }

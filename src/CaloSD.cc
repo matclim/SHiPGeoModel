@@ -41,11 +41,11 @@ G4bool CaloSD::ProcessHits(G4Step* step, G4TouchableHistory*) {
 
 
   static int nh = 0;
-  if (edep > 0) {
-    G4cout << "Hit "<< nh <<" in PV=" << pv->GetName()
-           << " edep(MeV)=" << edep/CLHEP::MeV << G4endl;
-    ++nh;
-  }
+//  if (edep > 0) {
+//    G4cout << "Hit "<< nh <<" in PV=" << pv->GetName()
+//           << " edep(MeV)=" << edep/CLHEP::MeV << G4endl;
+//    ++nh;
+//  }
 
  // const auto* tr = step->GetTrack();
  // const auto  pre = step->GetPreStepPoint();
