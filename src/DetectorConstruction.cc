@@ -78,7 +78,7 @@ GeoPhysVol* DetectorConstruction::buildGeoModelWorld()
   auto cfg = readConfigFile(m_cfgFile);
   
 
-  const double worldXY = cfg.plate_xy_mm * GeoModelKernelUnits::mm;
+  const double worldXY = cfg.plate_xy_mm * std::max(cfg.module_nx,cfg.module_ny) * GeoModelKernelUnits::mm;
   const double worldZ  = 6.0 * GeoModelKernelUnits::m;
 
   auto* worldShape = new GeoBox(0.5*worldXY, 0.5*worldXY, 0.5*worldZ);
