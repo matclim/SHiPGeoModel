@@ -10,6 +10,9 @@ struct HitAgg {
   G4ThreeVector sumEpos = {0,0,0}; // sum(edep * pos)
 };
 
+
+
+
 enum VolumeType : int {
   kWideH=1, kWideV=2, kThinH=3, kThinV=4, kFibreH=5, kFibreV=6
 };

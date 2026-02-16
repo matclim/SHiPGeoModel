@@ -36,10 +36,28 @@ G4bool CaloSD::ProcessHits(G4Step* step, G4TouchableHistory*) {
 
   static int nh = 0;
   if (edep > 0) {
-    G4cout << "Hit in PV=" << pv->GetName()
+    G4cout << "Hit "<< nh <<" in PV=" << pv->GetName()
            << " edep(MeV)=" << edep/CLHEP::MeV << G4endl;
     ++nh;
   }
+
+ // const auto* tr = step->GetTrack();
+ // const auto  pre = step->GetPreStepPoint();
+ // const auto  post = step->GetPostStepPoint();
+ // const auto  zpre = pre->GetPosition().z()/CLHEP::mm;
+ // const auto  zpost = post->GetPosition().z()/CLHEP::mm;
+ // const auto  dz = zpost - zpre;
+
+ // G4cout << "PV=" << pv->GetName()
+ //        << " edep(MeV)=" << edep/CLHEP::MeV
+ //        << " zpre(mm)=" << zpre
+ //        << " zpost(mm)=" << zpost
+ //        << " dz(mm)=" << dz
+ //        << " particle=" << tr->GetDefinition()->GetParticleName()
+ //        << " trackID=" << tr->GetTrackID()
+ //        << " parentID=" << tr->GetParentID()
+ //        << G4endl;
+
 
 
   return true;
@@ -57,7 +75,7 @@ void CaloSD::EndOfEvent(G4HCofThisEvent*) {
 ParsedID CaloSD::parse(const std::string& name) {
   ParsedID out;
 
-  out.section = (name.rfind("Hcal_",0)==0) ? kHcal : kEcal;
+  out.section = (name.rfind("HCAL_",0)==0) ? kHcal : kEcal;
 
   if (name.find("WidePVT_H_") != std::string::npos) out.type = kWideH;
   else if (name.find("WidePVT_V_") != std::string::npos) out.type = kWideV;

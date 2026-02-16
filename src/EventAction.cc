@@ -4,7 +4,7 @@
 EventAction::EventAction(EventStore* store) : m_store(store) {
   auto* man = G4AnalysisManager::Instance();
 
-  man->CreateNtuple("events", "calo hits");
+  man->CreateNtuple("calo_events", "calo hits");
   man->CreateNtupleDColumn("edep", m_store->edep);
   man->CreateNtupleDColumn("x",    m_store->x);
   man->CreateNtupleDColumn("y",    m_store->y);

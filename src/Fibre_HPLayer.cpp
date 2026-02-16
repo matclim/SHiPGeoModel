@@ -78,8 +78,8 @@ void Fibre_HPLayer::build(GeoVPhysVol* mother,
       const double z = zLocal[s];
 
       auto* fiberPhys = new GeoPhysVol(fiberLog);
-      std::string Orientation_String = "H_";
-      if(fibresAlongY) Orientation_String = "V_";
+      std::string Orientation_String = "H_L";
+      if(fibresAlongY) Orientation_String = "V_L";
       // Optional: NameTags are heavy, but very useful for debugging.
       // If gmex gets sluggish, remove NameTags for fibers.
       casingPhys->add(new GeoNameTag(
