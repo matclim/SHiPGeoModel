@@ -7,9 +7,9 @@
 
 struct HitAgg {
   double edep = 0.0;
-  G4ThreeVector sumEpos = {0,0,0}; // sum(edep * pos)
+  G4ThreeVector sumEpos = {0,0,0};      // global
+  G4ThreeVector sumEposLocal = {0,0,0}; // local to PV
 };
-
 
 
 

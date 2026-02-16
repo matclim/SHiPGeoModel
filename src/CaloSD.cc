@@ -16,23 +16,29 @@ void CaloSD::Initialize(G4HCofThisEvent*) {
 }
 
 G4bool CaloSD::ProcessHits(G4Step* step, G4TouchableHistory*) {
-  const double edep = step->GetTotalEnergyDeposit();
-  if (edep <= 0) return false;
 
-  const auto* touch = step->GetPreStepPoint()->GetTouchable();
+  const auto pre  = step->GetPreStepPoint()->GetPosition();
+  const auto post = step->GetPostStepPoint()->GetPosition();
+  const auto mid  = 0.5*(pre + post);
+
+
+  const auto& touch = step->GetPreStepPoint()->GetTouchableHandle();
+  const auto local = touch->GetHistory()->GetTopTransform().TransformPoint(mid);
   const auto* pv = touch->GetVolume();
+  const auto edep = step->GetTotalEnergyDeposit();
   if (!pv) return false;
-
+  
   const std::string vname = pv->GetName();
 
-  // Position policy: midpoint of step
-  const auto p0 = step->GetPreStepPoint()->GetPosition();
-  const auto p1 = step->GetPostStepPoint()->GetPosition();
-  const auto mid = 0.5*(p0+p1);
-
+  if (edep <= 0) return false;
+  
+  
+  
   auto& agg = m_map[vname];
   agg.edep += edep;
   agg.sumEpos += edep * mid;
+  agg.sumEposLocal += edep * local;
+
 
   static int nh = 0;
   if (edep > 0) {
@@ -64,12 +70,15 @@ G4bool CaloSD::ProcessHits(G4Step* step, G4TouchableHistory*) {
 }
 
 void CaloSD::EndOfEvent(G4HCofThisEvent*) {
+
   for (const auto& [name, agg] : m_map) {
     if (agg.edep <= 0) continue;
     const auto id = parse(name);
-    const auto pos = agg.sumEpos / agg.edep;
-    m_store->addHit(id, agg.edep, pos);
+    const auto posGlobal = agg.sumEpos / agg.edep;
+    const auto posLocal  = agg.sumEposLocal / agg.edep;
+    m_store->addHit(id, agg.edep, posGlobal, posLocal);
   }
+
 }
 
 ParsedID CaloSD::parse(const std::string& name) {

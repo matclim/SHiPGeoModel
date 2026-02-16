@@ -6,9 +6,12 @@ EventAction::EventAction(EventStore* store) : m_store(store) {
 
   man->CreateNtuple("calo_events", "calo hits");
   man->CreateNtupleDColumn("edep", m_store->edep);
-  man->CreateNtupleDColumn("x",    m_store->x);
-  man->CreateNtupleDColumn("y",    m_store->y);
-  man->CreateNtupleDColumn("z",    m_store->z);
+  man->CreateNtupleDColumn("x_global",    m_store->x_global);
+  man->CreateNtupleDColumn("y_global",    m_store->y_global);
+  man->CreateNtupleDColumn("z_global",    m_store->z_global);
+  man->CreateNtupleDColumn("x_local",     m_store->x_local);
+  man->CreateNtupleDColumn("y_local",     m_store->y_local);
+  man->CreateNtupleDColumn("z_local",     m_store->z_local);
 
   man->CreateNtupleIColumn("type",    m_store->type);
   man->CreateNtupleIColumn("section", m_store->section);
