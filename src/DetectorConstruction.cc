@@ -43,6 +43,26 @@ static G4VisAttributes* MakeVis(double r, double g, double b, double a=1.0) {
     return v;
 }
 
+double GetSystemThickness(std::vector<int> vec_layers,double thickness_wide, double thickness_thin, double thickness_hpl, double thickness_passive, double thickness_airgap){
+
+    double total_thickness = 0;
+
+    for(int N_layer=0;N_layer<vec_layers.size();N_layer++){
+        int layercode = vec_layers[N_layer];
+        switch(layercode){
+            case 1: total_thickness += thickness_wide; break;
+            case 2: total_thickness += thickness_wide; break;
+            case 3: total_thickness += thickness_thin; break;
+            case 4: total_thickness += thickness_thin; break;
+            case 5: total_thickness += thickness_hpl; break;
+            case 6: total_thickness += thickness_hpl; break;
+            case 7: total_thickness += thickness_passive; break;
+            case 8: total_thickness += thickness_airgap; break;
+        }
+    }
+
+    return total_thickness;
+}
 
 
 DetectorConstruction::DetectorConstruction(EventStore* store, std::string cfgFile)
@@ -55,14 +75,16 @@ GeoPhysVol* DetectorConstruction::buildGeoModelWorld()
   MaterialManager MM;
   auto* air = MM.air();
 
-  const double worldXY = 3.0 * GeoModelKernelUnits::m;
+  auto cfg = readConfigFile(m_cfgFile);
+  
+
+  const double worldXY = cfg.plate_xy_mm * GeoModelKernelUnits::mm;
   const double worldZ  = 6.0 * GeoModelKernelUnits::m;
 
   auto* worldShape = new GeoBox(0.5*worldXY, 0.5*worldXY, 0.5*worldZ);
   auto* worldLog   = new GeoLogVol("WorldLog", worldShape, air);
   auto* worldPhys  = new GeoPhysVol(worldLog);
 
-  auto cfg = readConfigFile(m_cfgFile);
 
 const int nx = std::max(1, cfg.module_nx);
 const int ny = std::max(1, cfg.module_ny);

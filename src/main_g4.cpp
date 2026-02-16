@@ -75,6 +75,7 @@ int main(int argc, char** argv)
     auto* app = new G4UIExecutive(argc, argv);
     UImanager->ApplyCommand("/control/execute " + G4String(run.vis_macro));
     app->SessionStart();
+    if(vis != nullptr) delete vis;
     delete app;
   } else {
     // your current batch behavior
@@ -89,11 +90,10 @@ int main(int argc, char** argv)
     }
   }
 
-delete vis;
+//delete vis;
    if (!run.macro.empty()) {
   }  
 
-  delete vis;
   delete runManager;
   delete store;
   return 0;
