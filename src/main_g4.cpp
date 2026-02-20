@@ -130,7 +130,7 @@ int main(int argc, char** argv)
     if(vis != nullptr) delete vis;
     delete app;
   } else {
-    // batch behavior
+    // your current batch behavior
     if (!run.macro.empty()) {
       UImanager->ApplyCommand("/control/execute " + G4String(run.macro));
       if (run.n_events > 0) {

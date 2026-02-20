@@ -56,7 +56,6 @@ CalorimeterConfig readConfigFile(const std::string& path)
     }
     else if (key == "hpl_thickness_mm")  cfg.hpl_thickness_mm = std::stod(val);
     else if (key == "fiber_diameter_mm") cfg.fiber_diameter_mm = std::stod(val);
-    else if (key == "fiber_core_diameter_mm") cfg.fiber_core_diameter_mm = std::stod(val);
     else if (key == "airgap_mm") cfg.airgap_mm = std::stod(val);
     else if (key == "layers2") cfg.layers2 = parseIntList(val);
     else if (key == "iron_thickness_mm") cfg.iron_thickness_mm = std::stod(val);
@@ -68,11 +67,10 @@ CalorimeterConfig readConfigFile(const std::string& path)
     else if (key == "tol_x_mm") cfg.tol_x_mm = std::stod(val);
     else if (key == "tol_y_mm") cfg.tol_y_mm = std::stod(val);
     else if (key == "tol_z_mm") cfg.tol_z_mm = std::stod(val);
+
   }
   if (cfg.layers.empty())
     throw std::runtime_error("Config must define: layers = 7,1,7,3,...");
-  if (cfg.fiber_core_diameter_mm <= 0) cfg.fiber_core_diameter_mm = cfg.fiber_diameter_mm;
-  if (cfg.fiber_core_diameter_mm > cfg.fiber_diameter_mm)
-    throw std::runtime_error("fiber_core_diameter_mm cannot exceed fiber_diameter_mm");
+
   return cfg;
 }

@@ -243,7 +243,6 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
                              /*zCenter_mm=*/0.0,
                              iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
                              cfg.fiber_diameter_mm,
-                             cfg.fiber_core_diameter_mm,
                              /*fibresAlongY=*/true,
                              mtag);
         
@@ -268,7 +267,6 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
                              /*zCenter_mm=*/0.0,
                              iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
                              cfg.fiber_diameter_mm,
-                             cfg.fiber_core_diameter_mm,
                              /*fibresAlongY=*/false,
                              mtag);
         
@@ -316,7 +314,6 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
                              /*zCenter_mm=*/0.0,
                              iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
                              cfg.fiber_diameter_mm,
-                             cfg.fiber_core_diameter_mm,
                              /*fibresAlongY=*/true,
                              mtag);
         
@@ -342,7 +339,6 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
                              /*zCenter_mm=*/0.0,
                              iHPL, cfg.plate_xy_mm, cfg.hpl_thickness_mm,
                              cfg.fiber_diameter_mm,
-                             cfg.fiber_core_diameter_mm,
                              /*fibresAlongY=*/false,
                              mtag);
         
@@ -383,7 +379,7 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
         const double zCenter = zCursor + 0.5*scintZ;
         
         const std::string envName =
-          "HCAL_GL" + std::to_string(globalLayer) +
+          "ECAL_GL" + std::to_string(globalLayer) +
           "_SL" + std::to_string(globalsensLayer) +
           "_WidePVT_V" + mtag;
         
@@ -392,7 +388,7 @@ void CalorimeterBuilder::buildStack(GeoVPhysVol* world, MaterialManager& MM, con
         // place bars inside env at local z=0
         BarLayer::place(env, wideVLog, 60.0, 36,
                         /*zCenter_mm=*/0.0,
-                        ("HCAL_GL"+std::to_string(globalLayer)+
+                        ("ECAL_GL"+std::to_string(globalLayer)+
                          "_SL"+std::to_string(globalsensLayer)+
                          "_WidePVT_V").c_str(),
                         iWideV, BarAxis::AlongY, mtag);

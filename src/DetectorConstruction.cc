@@ -176,8 +176,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
               (ln.find("PS") != std::string::npos || ln.find("Poly") != std::string::npos)) {
       lv->SetSensitiveDetector(caloSD); ++nSensitive;
     } else if (ln.find("HPL") != std::string::npos &&
-     ln.find("FiberCore") != std::string::npos) {
-     lv->SetSensitiveDetector(caloSD); ++nSensitive;
+              (ln.find("Fiber") != std::string::npos || ln.find("Fibre") != std::string::npos)) {
+      lv->SetSensitiveDetector(caloSD); ++nSensitive;
     }
   }
 

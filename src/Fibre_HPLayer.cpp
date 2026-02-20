@@ -10,11 +10,8 @@
 
 #include <string>
 #include <cmath>
-#include <algorithm>
-#include <stdexcept>
 
 using namespace GeoModelKernelUnits;
-
 void Fibre_HPLayer::build(GeoVPhysVol* mother,
                           GeoMaterial* aluminumMat,
                           GeoMaterial* fiberMat,
@@ -24,92 +21,79 @@ void Fibre_HPLayer::build(GeoVPhysVol* mother,
                           double casingXY_mm,
                           double casingZ_mm,
                           double fiberDiam_mm,
-                          double fiberCoreDiam_mm,
                           bool fibresAlongY,
-                          const std::string& nameSuffix)
+                          const std::string& nameSuffix
+                          )
 {
   // --- casing dimensions ---
   const double casingXY = casingXY_mm * mm;
   const double casingZ  = casingZ_mm  * mm;
 
-  // --- build casing ---
+  // Build casing (one physvol per layer)
   auto* casingShape = new GeoBox(0.5*casingXY, 0.5*casingXY, 0.5*casingZ);
   auto* casingLog   = new GeoLogVol("HPL_CasingLog", casingShape, aluminumMat);
+  
   auto* casingPhys  = new GeoPhysVol(casingLog);
 
+  
   mother->add(new GeoNameTag((layering + "_HPL_Casing" + nameSuffix).c_str()));
   mother->add(new GeoTransform(GeoTrf::Translate3D(0, 0, zCenter_mm * mm)));
   mother->add(casingPhys);
 
   // --- fibre geometry ---
-  const double rOuter = 0.5 * fiberDiam_mm * mm;
-  const double rCore  = 0.5 * fiberCoreDiam_mm * mm;
+  const double r = 0.5 * fiberDiam_mm * mm;
+  const double fiberLen = casingXY; // 2160 mm along Y (your requirement)
+  const double halfLen = 0.5 * fiberLen;
 
-  if (rCore <= 0.0 || rCore > rOuter) {
-    throw std::runtime_error("Fibre_HPLayer: invalid core diameter (core must be >0 and <= outer)");
+  // If fibresAlongY: rotate +90° about X -> Z becomes Y.
+  // Else (fibres along X): rotate -90° about Y -> Z becomes X.
+  GeoTrf::Transform3D rotAxis = GeoTrf::Transform3D::Identity();
+  if (fibresAlongY) {
+    rotAxis = GeoTrf::RotateX3D(90.0 * deg);     // Z -> Y
+  } else {
+    rotAxis = GeoTrf::RotateY3D(-90.0 * deg);    // Z -> X
   }
 
-  // Fibres run along casingXY; GeoTube axis is Z by default
-  const double halfLen = 0.5 * casingXY;
+  // Reuse a single logical volume for all fibres in this layer
+  auto* fiberShape = new GeoTube(0.0, r, halfLen);
+  auto* fiberLog   = new GeoLogVol("HPL_FiberLog", fiberShape, fiberMat);
+  // --- placement: 3 sublayers, 1800 fibres each ---
+  const int    nFib = 1800;
+  const double pitch = fiberDiam_mm * mm;      // tight stack
+  const double x0 = -0.5*(nFib - 1) * pitch;   // centered
 
-  // rotate tube axis to Y or X
-  GeoTrf::Transform3D rotAxis = GeoTrf::Transform3D::Identity();
-  if (fibresAlongY) rotAxis = GeoTrf::RotateX3D( 90.0 * deg);   // Z -> Y
-  else              rotAxis = GeoTrf::RotateY3D(-90.0 * deg);   // Z -> X
-
-  auto* cladShape = new GeoTube(0.0, rOuter, halfLen);
-  auto* coreShape = new GeoTube(0.0, rCore,  halfLen);
-
-  // LV names: cladding should NOT contain "Fiber" if you match "FiberCore" for sensitivity later
-  auto* cladLog = new GeoLogVol("HPL_CladLog",      cladShape, fiberMat);
-  auto* coreLog = new GeoLogVol("HPL_FiberCoreLog", coreShape, fiberMat);
-
-  // --- tiling along packing coordinate ---
-  const double pitch = 2.0 * rOuter;      // tight packing (center-to-center)
-  const double dxMax = 0.5 * pitch;       // middle sublayer shift
-
-  const double usable = casingXY - 2.0*rOuter - dxMax;
-  const int nFib = std::max(1, int(std::floor(usable / pitch)) + 1);
-
-  // center the bundle; include dxMax so shifted layer still fits
-  const double x0 = -0.5 * ((nFib - 1) * pitch + dxMax);
-
+  // Sublayer offsets:
+  // 0 and 2 aligned, 1 shifted by +0.5*d in X.
   const double dx[3] = {0.0, 0.5*pitch, 0.0};
 
-  // --- sublayer Z placement (keep inside casingZ) ---
-  // Put outer sublayers as far as possible without crossing the casing boundary
-  const double dz = std::max(0.0, (0.5*casingZ - rOuter));
+  // Z separation between sublayers:
+  // simplest “stacked” is pitch; this matches “3 sublayers” literally.
+  // (If later you want true hex close packing, you’d use pitch*sqrt(3)/2.)
+  const double dz = pitch;
   const double zLocal[3] = {-dz, 0.0, +dz};
 
-  const std::string orient = fibresAlongY ? "V_L" : "H_L";
-
-  // --- place fibres ---
-  for (int s = 0; s < 3; ++s) {
+  for (int s = 0; s < 3; ++s) {//sublayer
     for (int i = 0; i < nFib; ++i) {
-      const double pack = x0 + i * pitch + dx[s];
-      const double z    = zLocal[s];
+      const double x = x0 + i * pitch + dx[s];
+      const double z = zLocal[s];
 
-      const std::string baseName =
-        layering + "_HPL_" + orient + std::to_string(layerIndex) +
-        "_S" + std::to_string(s) +
-        "_F" + std::to_string(i) +
-        nameSuffix;
+      auto* fiberPhys = new GeoPhysVol(fiberLog);
+      std::string Orientation_String = "H_L";
+      if(fibresAlongY) Orientation_String = "V_L";
+      // Optional: NameTags are heavy, but very useful for debugging.
+      // If gmex gets sluggish, remove NameTags for fibers.
+      casingPhys->add(new GeoNameTag(
+        (layering+"_HPL_" + Orientation_String + std::to_string(layerIndex) + "_S" + std::to_string(s) + "_F" + std::to_string(i) + nameSuffix).c_str()
+      ));
+      // If fibres run along Y, we pack them in X (x varies).
+      // If fibres run along X, we pack them in Y (y varies).
+      const double xPos = fibresAlongY ? x : 0.0;
+      const double yPos = fibresAlongY ? 0.0 : x;  // reuse "x" as the packing coordinate
 
-      // cladding PV
-      auto* cladPhys = new GeoPhysVol(cladLog);
-
-      // core PV inside cladding PV (same axis, no transform)
-      cladPhys->add(new GeoNameTag((baseName + "_Core").c_str()));
-      cladPhys->add(new GeoPhysVol(coreLog));
-
-      // name the cladding itself too (useful for debugging)
-      casingPhys->add(new GeoNameTag((baseName + "_Clad").c_str()));
-
-      const double xPos = fibresAlongY ? pack : 0.0;
-      const double yPos = fibresAlongY ? 0.0  : pack;
-
-      casingPhys->add(new GeoTransform(GeoTrf::Translate3D(xPos, yPos, z) * rotAxis));
-      casingPhys->add(cladPhys);
+      casingPhys->add(new GeoTransform(
+        GeoTrf::Translate3D(xPos, yPos, z) * rotAxis
+      ));
+      casingPhys->add(fiberPhys);
     }
   }
 }
