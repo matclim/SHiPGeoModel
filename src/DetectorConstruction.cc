@@ -34,6 +34,13 @@
 #include "G4VisAttributes.hh"
 #include "G4Colour.hh"
 
+// Export to gdml
+#include "G4GDMLParser.hh"
+#include "G4Threading.hh"
+#include "G4AutoLock.hh"
+#include <cstdlib>
+
+
 using namespace GeoModelKernelUnits;
 
 static G4VisAttributes* MakeVis(double r, double g, double b, double a=1.0) {
@@ -65,8 +72,8 @@ double GetSystemThickness(std::vector<int> vec_layers,double thickness_wide, dou
 }
 
 
-DetectorConstruction::DetectorConstruction(EventStore* store, std::string cfgFile)
-: m_store(store), m_cfgFile(std::move(cfgFile)) {}
+DetectorConstruction::DetectorConstruction(EventStore* store, std::string cfgFile, int w_g)
+: m_store(store), m_cfgFile(std::move(cfgFile)) {write_gdml = write_gdml;}
 
 DetectorConstruction::~DetectorConstruction() {}
 
@@ -209,7 +216,27 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
           lv->SetVisAttributes(visAlCase);
       }
   }
+  static G4Mutex gdmlMutex = G4MUTEX_INITIALIZER;
+  static bool gdmlWritten = false;
 
+  const char* doGdml = std::getenv("G4_EXPORT_GDML");
+
+    // In MT jobs, ensure only one thread writes
+    G4AutoLock lock(&gdmlMutex);
+  if(write_gdml){
+    if (!gdmlWritten && G4Threading::IsMasterThread()) {
+      const char* out = std::getenv("G4_GDML_OUT");
+      std::string outName = out ? out : "geometry.gdml";
+
+      G4GDMLParser parser;
+      parser.SetStripFlag(false); // keep names
+      // 3rd argument: write schema location attributes
+      parser.Write(outName, pvWorld, /*storeReferences=*/true);
+
+      G4cout << "[DetectorConstruction] Wrote GDML to: " << outName << G4endl;
+      gdmlWritten = true;
+    }
+  }
 
 
   return pvWorld;
