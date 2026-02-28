@@ -16,7 +16,6 @@ RunAction::RunAction(int Beamenergy) {
 
 
 RunAction::~RunAction() {
-  delete G4AnalysisManager::Instance();
 }
 
 void RunAction::BeginOfRunAction(const G4Run*) {
@@ -27,4 +26,5 @@ void RunAction::EndOfRunAction(const G4Run*) {
   auto* man = G4AnalysisManager::Instance();
   man->Write();
   man->CloseFile();
+  
 }

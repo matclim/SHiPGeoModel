@@ -1,5 +1,8 @@
 #include "EventAction.hh"
 #include "G4AnalysisManager.hh"
+#include "G4Event.hh"
+#include "G4ios.hh"
+
 
 EventAction::EventAction(EventStore* store) : m_store(store) {
   auto* man = G4AnalysisManager::Instance();
@@ -24,8 +27,9 @@ EventAction::EventAction(EventStore* store) : m_store(store) {
   man->FinishNtuple();
 }
 
-void EventAction::BeginOfEventAction(const G4Event*) {
+void EventAction::BeginOfEventAction(const G4Event* event) {
   m_store->clear();
+  G4cout << "\n=== Event " << event->GetEventID() << " ===" << G4endl;
 }
 
 void EventAction::EndOfEventAction(const G4Event*) {
