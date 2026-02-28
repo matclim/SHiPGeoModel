@@ -73,7 +73,7 @@ double GetSystemThickness(std::vector<int> vec_layers,double thickness_wide, dou
 
 
 DetectorConstruction::DetectorConstruction(EventStore* store, std::string cfgFile, int w_g)
-: m_store(store), m_cfgFile(std::move(cfgFile)) {write_gdml = write_gdml;}
+: m_store(store), m_cfgFile(std::move(cfgFile)) {write_gdml = w_g;}
 
 DetectorConstruction::~DetectorConstruction() {}
 
