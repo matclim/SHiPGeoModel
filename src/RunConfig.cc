@@ -53,6 +53,7 @@ RunConfig readRunConfigFile(const std::string& path) {
     else if (key == "sigma_xy_mm")    cfg.sigma_xy_mm = std::stod(val);
     else if (key == "macro")          cfg.macro = val;
     else if (key == "seed")           cfg.seed = std::stol(val);
+    else if (key == "write_gdml")     cfg.write_gdml = std::stoi(val);
     else if (key == "visualize") {
       std::string v = val;
       for (auto& c : v) c = std::tolower((unsigned char)c);
@@ -65,6 +66,7 @@ RunConfig readRunConfigFile(const std::string& path) {
     else
       throw std::runtime_error("Unknown run.cfg key: " + key);
   }
+
 
   return cfg;
 }

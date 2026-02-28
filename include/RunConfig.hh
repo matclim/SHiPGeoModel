@@ -17,7 +17,7 @@ struct RunConfig {
 
   std::string macro = "";
   long seed = 0;
-
+  int  write_gdml = 0;
   bool visualize = false;
   std::string vis_macro = "../vis.mac";
 

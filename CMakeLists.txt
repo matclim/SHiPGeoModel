@@ -7,10 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(GeoModelCore REQUIRED)
 find_package(GeoModelIO REQUIRED)
 find_package(GeoModelG4 REQUIRED)
+
 # ---- Geant4 ----
 find_package(Geant4 REQUIRED ui_all vis_all)
 include(${Geant4_USE_FILE})
 
+# ---- ROOT (for digitisation executable) ----
+find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
+
+# ---- Geometry construction library ----
 add_library(CaloGeo STATIC
   src/MaterialManager.cpp
   src/ConfigReader.cpp
@@ -18,30 +23,33 @@ add_library(CaloGeo STATIC
   src/BarLayer.cpp
   src/Fibre_HPLayer.cpp
 )
-
 target_include_directories(CaloGeo PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
 target_link_libraries(CaloGeo PUBLIC
   GeoModelCore::GeoModelKernel
 )
 
-# ---- DB writer (gmex path) ----
-add_executable(make_leadplate_db
-  src/make_db.cpp
+# ---- Digitisation library ----
+add_library(CaloSysDigitiser STATIC
+  src/CaloSysDigitiser.cc
 )
-
-target_include_directories(make_leadplate_db PRIVATE
+target_include_directories(CaloSysDigitiser PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+# ---- DB writer ----
+add_executable(make_leadplate_db
+  src/make_db.cpp
+)
+target_include_directories(make_leadplate_db PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 target_link_libraries(make_leadplate_db PRIVATE
   CaloGeo
   GeoModelIO::GeoModelWrite
   GeoModelIO::GeoModelDBManager
 )
-
 
 # ---- Geant4 simulation ----
 add_executable(run_g4
@@ -54,11 +62,9 @@ add_executable(run_g4
   src/RunConfig.cc
   src/PrimaryGeneratorAction.cc
 )
-
 target_include_directories(run_g4 PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
 target_link_libraries(run_g4 PRIVATE
   CaloGeo
   ${Geant4_LIBRARIES}
@@ -79,3 +85,23 @@ elseif (TARGET GeoMaterial2G4)
   target_link_libraries(run_g4 PRIVATE GeoMaterial2G4)
 endif()
 
+# ---- Digitisation executable ----
+add_executable(digitise_calo;
+  src/digitise_calo.cpp   
+)
+target_include_directories(digitise_calo PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# ROOT modern targets:
+if (TARGET ROOT::Core)
+  target_link_libraries(digitise_calo PRIVATE
+    CaloSysDigitiser 
+    ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
+  )
+else()
+  # Fallback for older ROOT configs
+  include(${ROOT_USE_FILE})
+  target_include_directories(digitise_calo PRIVATE ${ROOT_INCLUDE_DIRS})
+  target_link_libraries(digitise_calo PRIVATE CaloSysDigitiser ${ROOT_LIBRARIES})
+endif()
