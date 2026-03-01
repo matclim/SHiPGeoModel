@@ -99,6 +99,8 @@ void CaloSysDigitiser::Initialise(){
   ft_out->Branch("v_digi_widebar_V",&v_digi_widebar_V);
   ft_out->Branch("v_digi_thinbar_H",&v_digi_thinbar_H);
   ft_out->Branch("v_digi_thinbar_V",&v_digi_thinbar_V);
+  ft_out->Branch("v_digi_widelayer", &v_digi_widelayer);
+  ft_out->Branch("v_digi_thinlayer", &v_digi_thinlayer);
   ft_out->Branch("v_digi_wide_hexant",&v_digi_wide_hexant);
   ft_out->Branch("v_digi_thin_hexant",&v_digi_thin_hexant);
   ft_out->Branch("v_digi_sharp_hexant",&v_digi_sharp_hexant);
@@ -111,7 +113,9 @@ void CaloSysDigitiser::Initialise(){
   ft_out->Branch("v_digi_sharp_x",&v_digi_sharp_x);
   ft_out->Branch("v_digi_sharp_y",&v_digi_sharp_y);
   ft_out->Branch("v_digi_sharp_z",&v_digi_sharp_z);
-
+  ft_out->Branch("v_digi_wide_hcal",  &v_digi_wide_hcal);
+  ft_out->Branch("v_digi_thin_hcal",  &v_digi_thin_hcal);
+  ft_out->Branch("v_digi_sharp_hcal", &v_digi_sharp_hcal);
 }
 
 
@@ -147,7 +151,6 @@ double CaloSysDigitiser::ConvertADCCountThin(double n_PE_wnoise, bool &LG){
   if(HG_ADC < 1000) return HG_ADC; 
   else {LG=1; if((lg_pedestal + HG_ADC/LG_factor) < 1023) return lg_pedestal + HG_ADC/LG_factor; else return 1023;}
 }
-
 
 double CaloSysDigitiser::ConvertADCCountSHARP(double n_PE_wnoise, bool &LG){
   double HG_ADC = cf_fibre_n_PE_ADC * n_PE_wnoise + hg_pedestal;
@@ -236,7 +239,8 @@ double CaloSysDigitiser::GetFibreCentre(double global_coord, int sublayer) const
  * Sensor centres are on a regular size_sharp_sipm grid, aligned to 0.
  */
 void CaloSysDigitiser::MapFibreToSensors(double fibre_along, double fibre_transverse,
-                                          double z_global, int layer, int type, int hexant){
+                       double z_global, int layer, int type, int hexant, bool hcal){
+
     // Find index of nearest sensor centre in global coordinates
     int centre_idx = static_cast<int>(std::floor(fibre_along / size_sharp_SiPM + 0.5));
 
@@ -275,6 +279,7 @@ void CaloSysDigitiser::MapFibreToSensors(double fibre_along, double fibre_transv
       v_digi_sharp_orientation.push_back(type);
       v_digi_sharplayer.push_back(layer);
       v_digi_sharp_z.push_back(z_global);
+      v_digi_sharp_hcal.push_back(hcal);
       if (type == 5) {
           v_digi_sharp_x.push_back(sensor_global);
           v_digi_sharp_y.push_back(global_transverse);
@@ -316,17 +321,6 @@ double CaloSysDigitiser::GetADCCountThin(double edep, double xy_local, bool &LG)
   n_PE_wnoise = AddGeneralNoise(n_PE_wnoise);
   return ConvertADCCountThin(n_PE_wnoise,LG);
 }
-
-double CaloSysDigitiser::GetADCCountSHARP(double edep, double xy_local, bool &LG){
-    
-  ConvertFibrePromptPhotonCount(edep);
-  ConvertFibreAttenuatedPhotonCount(xy_local); 
-  ConvertFibreEscapingPhotonCount(); //No propogation inside of scintillator, just lose photons to attenuation
-  ConvertFibrePE();
-  n_PE_wnoise = AddSiPMNoise(n_PE);
-  return ConvertADCCountSHARP(n_PE_wnoise, LG);
-}
-
 
 void CaloSysDigitiser::GetADCChannels(int type, double edep, double x_local, double y_local){
 
@@ -382,24 +376,28 @@ void CaloSysDigitiser::GetBar_or_Fibre(ULong64_t entry){
             v_digi_wide_y.push_back(SmearWideBarsWidth(v_y_global->at(entry))); 
             v_digi_wide_orientation.push_back(1);
             v_digi_wide_hexant.push_back(hexantX*10 + hexantY);
+            v_digi_wide_hcal.push_back(v_hcal->at(entry));
             break;
     case 2: v_digi_widebar_V.push_back(v_vol->at(entry)); //Vertical
             v_digi_wide_x.push_back(SmearWideBarsWidth(v_x_global->at(entry))); 
             v_digi_wide_y.push_back(SmearWideBarsLength(v_y_global->at(entry)));
             v_digi_wide_orientation.push_back(2);
             v_digi_wide_hexant.push_back(hexantX*10 + hexantY);
+            v_digi_wide_hcal.push_back(v_hcal->at(entry));
             break;
     case 3: v_digi_thinbar_H.push_back(v_vol->at(entry)); //Horizontal
             v_digi_thin_x.push_back(SmearThinBarsLength(v_x_global->at(entry))); 
             v_digi_thin_y.push_back(SmearThinBarsWidth(v_y_global->at(entry))); 
             v_digi_thin_orientation.push_back(3);
             v_digi_thin_hexant.push_back(hexantX*10 + hexantY);
+            v_digi_thin_hcal.push_back(v_hcal->at(entry));
             break;
     case 4: v_digi_thinbar_V.push_back(v_vol->at(entry)); //Vertical
             v_digi_thin_x.push_back(SmearThinBarsWidth(v_x_global->at(entry))); 
             v_digi_thin_y.push_back(SmearThinBarsLength(v_y_global->at(entry)));
             v_digi_thin_orientation.push_back(4);
             v_digi_thin_hexant.push_back(hexantX*10 + hexantY);
+            v_digi_thin_hcal.push_back(v_hcal->at(entry));
             break;
     case 5: { // SHARP Horizontal — fibres along x, transverse is y
         int sublayer = v_hpl_subsection->at(entry);
@@ -411,7 +409,7 @@ void CaloSysDigitiser::GetBar_or_Fibre(ULong64_t entry){
         ConvertFibreEscapingPhotonCount();
         MapFibreToSensors(fibre_along, fibre_transverse,
                   v_z_global->at(entry), v_layer->at(entry),
-                  5, hexantX*10 + hexantY);
+                  5, hexantX*10 + hexantY, v_hcal->at(entry));
         break;
     }
     case 6: { // SHARP Vertical — fibres along y, transverse is x
@@ -424,7 +422,7 @@ void CaloSysDigitiser::GetBar_or_Fibre(ULong64_t entry){
         ConvertFibreEscapingPhotonCount();
         MapFibreToSensors(fibre_along, fibre_transverse,
                   v_z_global->at(entry), v_layer->at(entry),
-                  6, hexantX*10 + hexantY);
+                  6, hexantX*10 + hexantY, v_hcal->at(entry));
         break;
     }
   }
@@ -486,6 +484,9 @@ void CaloSysDigitiser::Loop(){
     v_digi_sharp_z.clear();
     v_digi_sharplayer.clear();
     v_digi_sharp_sensorID.clear();
+    v_digi_wide_hcal.clear();
+    v_digi_thin_hcal.clear();
+    v_digi_sharp_hcal.clear();
   }
   ff_out->WriteTObject(ft_out);
   ff_out->Close();
