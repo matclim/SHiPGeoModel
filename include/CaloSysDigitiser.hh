@@ -101,9 +101,9 @@ class CaloSysDigitiser{
     std::vector<bool> v_digi_widebar_gain_switch_R;
     std::vector<bool> v_digi_thinbar_gain_switch_L;
     std::vector<bool> v_digi_thinbar_gain_switch_R;
-    std::vector<int> v_digi_wide_hcal;
-    std::vector<int> v_digi_thin_hcal;
-    std::vector<int> v_digi_sharp_hcal;
+    std::vector<bool> v_digi_wide_hcal;
+    std::vector<bool> v_digi_thin_hcal;
+    std::vector<bool> v_digi_sharp_hcal;
     std::vector<int> v_digi_wide_orientation;  // 1 = horizontal, 2 = vertical
     std::vector<int> v_digi_thin_orientation;  // 3 = horizontal, 4 = vertical
     std::vector<int> v_digi_sharp_orientation; // 5 = horizontal, 6 = vertical
