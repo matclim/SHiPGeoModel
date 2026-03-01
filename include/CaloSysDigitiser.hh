@@ -55,7 +55,7 @@ class CaloSysDigitiser{
     double CircleAreaLeftOfLine(double d, double r) const;
     double FibreSensorOverlapFraction(double fibre_x, double sensor_x) const;
     double GetFibreCentre(double global_coord, int sublayer) const;
-    void MapFibreToSensors(double fibre_along, double fibre_transverse, double z_global, int layer, int type);
+    void MapFibreToSensors(double fibre_along, double fibre_transverse, double z_global, int layer, int type, int hexant);
 
     double AddSiPMNoise(double PEcount);
     double GetADCCountWide(double edep, double xy_local, bool &LG);
@@ -106,6 +106,10 @@ class CaloSysDigitiser{
     std::vector<int> v_digi_wide_orientation;  // 1 = horizontal, 2 = vertical
     std::vector<int> v_digi_thin_orientation;  // 3 = horizontal, 4 = vertical
     std::vector<int> v_digi_sharp_orientation; // 5 = horizontal, 6 = vertical
+    std::vector<int> v_digi_sharp_sensorID;
+    std::vector<int> v_digi_wide_hexant;
+    std::vector<int> v_digi_thin_hexant;
+    std::vector<int> v_digi_sharp_hexant;
     std::vector<bool> v_digi_sharp_gain_switch;
     std::vector<int> v_digi_widebar_H;
     std::vector<int> v_digi_widebar_V;
