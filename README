@@ -1,3 +1,10 @@
+#3 main branches here:
+
+stable: it's stable, well understood, limited risks but fewer features
+main: the workhorse, supported but features are merged in from experimental
+experimental: is experimental, things may break but has the most and newest features
+
+
 #Instructions for geometry display
 
 mkdir build

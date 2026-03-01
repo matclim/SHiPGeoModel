@@ -40,7 +40,7 @@ target_include_directories(CaloSysDigitiser PUBLIC
 
 # ---- DB writer ----
 add_executable(make_leadplate_db
-  src/make_db.cpp
+  exec/make_db.cpp
 )
 target_include_directories(make_leadplate_db PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -53,7 +53,7 @@ target_link_libraries(make_leadplate_db PRIVATE
 
 # ---- Geant4 simulation ----
 add_executable(run_g4
-  src/main_g4.cpp
+  exec/main_g4.cpp
   src/DetectorConstruction.cc
   src/CaloSD.cc
   src/EventStore.cc
@@ -87,7 +87,7 @@ endif()
 
 # ---- Digitisation executable ----
 add_executable(digitise_calo;
-  src/digitise_calo.cpp   
+  exec/digitise_calo.cpp   
 )
 target_include_directories(digitise_calo PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
