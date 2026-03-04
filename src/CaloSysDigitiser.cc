@@ -334,21 +334,25 @@ void CaloSysDigitiser::GetADCChannels(int type, double edep, double x_local, dou
   switch(type){
     case 1: v_digi_widebar_ADC_SiPM_L.push_back(GetADCCountWide(edep, x_local_shifted, LG));
             v_digi_widebar_gain_switch_L.push_back(LG);
+            LG = 0;
             v_digi_widebar_ADC_SiPM_R.push_back(GetADCCountWide(edep, size_bar_L - x_local_shifted,LG));
             v_digi_widebar_gain_switch_R.push_back(LG);
             break;
     case 2: v_digi_widebar_ADC_SiPM_L.push_back(GetADCCountWide(edep, y_local_shifted, LG));
             v_digi_widebar_gain_switch_L.push_back(LG);
+            LG = 0;
             v_digi_widebar_ADC_SiPM_R.push_back(GetADCCountWide(edep, size_bar_L - y_local_shifted, LG));
             v_digi_widebar_gain_switch_R.push_back(LG);
             break;
     case 3: v_digi_thinbar_ADC_SiPM_L.push_back(GetADCCountThin(edep, x_local_shifted, LG));
             v_digi_thinbar_gain_switch_L.push_back(LG);
+            LG = 0;
             v_digi_thinbar_ADC_SiPM_R.push_back(GetADCCountThin(edep, size_bar_L - x_local_shifted, LG));
             v_digi_thinbar_gain_switch_R.push_back(LG);
             break;
     case 4: v_digi_thinbar_ADC_SiPM_L.push_back(GetADCCountThin(edep, y_local_shifted, LG));
             v_digi_thinbar_gain_switch_L.push_back(LG);
+            LG = 0;
             v_digi_thinbar_ADC_SiPM_R.push_back(GetADCCountThin(edep, size_bar_L - y_local_shifted, LG));
             v_digi_thinbar_gain_switch_R.push_back(LG);
             break;
