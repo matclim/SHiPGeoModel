@@ -21,28 +21,97 @@ void CaloSysDigitiser::HexantUnpacker(ULong64_t entry){
 }
 
 
-double CaloSysDigitiser::SmearWideBarsWidth(double global_coord) const{
-    double shifted = std::fmod(global_coord + 0.5f * size_bar_W, size_bar_W);
-    if (shifted < 0) shifted += size_bar_W;
-    return shifted - 0.5 * size_bar_W;
+// ---------------------------------------------------------------------------
+// Grid-based coordinate snapping
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Two grid builders with different anchoring strategies:
+//
+//  BuildFineGrid  — centres at (n + 0.5)*pitch  (e.g. 30, 90, 150 mm for 60 mm bars)
+//                   Bar edges lie on exact multiples of pitch; the centre of bar n
+//                   is therefore at (n + 0.5)*pitch.  Used for the position-sensitive
+//                   (fine) axis of each bar type.
+//
+//  BuildCoarseGrid — centres at n*pitch  (e.g. -2160, 0, +2160 mm for 2160 mm hexants)
+//                   One centre per hexant, sitting at the hexant midpoint.  Used for
+//                   the along-bar (coarse) axis where only hexant identity matters.
+// ---------------------------------------------------------------------------
+
+std::vector<double> CaloSysDigitiser::BuildFineGrid(double global_min,
+                                                      double global_max,
+                                                      double pitch) const
+{
+    std::vector<double> grid;
+    // First centre: (n+0.5)*pitch for the lowest n that places it inside the range
+    double first = std::floor(global_min / pitch) * pitch + 0.5 * pitch;
+    for (double c = first; c <= global_max + 0.5 * pitch; c += pitch)
+        grid.push_back(c);
+    return grid;
 }
 
-double CaloSysDigitiser::SmearThinBarsLength(double global_coord) const{
-    double shifted = std::fmod(global_coord + 0.5f * size_bar_L, size_bar_L);
-    if (shifted < 0) shifted += size_bar_L;
-    return shifted - 0.5 * size_bar_L;
+std::vector<double> CaloSysDigitiser::BuildCoarseGrid(double global_min,
+                                                        double global_max,
+                                                        double pitch) const
+{
+    std::vector<double> grid;
+    // First centre: n*pitch (integer multiples) — hexant centres at 0, ±2160, etc.
+    double first = std::ceil(global_min / pitch) * pitch;
+    for (double c = first; c <= global_max + 0.5 * pitch; c += pitch)
+        grid.push_back(c);
+    return grid;
 }
 
-double CaloSysDigitiser::SmearThinBarsWidth(double global_coord) const{
-    double shifted = std::fmod(global_coord + 0.5f * size_bar_W, size_bar_W);
-    if (shifted < 0) shifted += size_bar_W;
-    return shifted - 0.5 * size_bar_W;
+// BuildGrid is kept as an alias for BuildFineGrid for backward compatibility.
+std::vector<double> CaloSysDigitiser::BuildGrid(double global_min,
+                                                 double global_max,
+                                                 double pitch) const
+{
+    return BuildFineGrid(global_min, global_max, pitch);
 }
 
-double CaloSysDigitiser::SmearWideBarsLength(double global_coord) const{
-    double shifted = std::fmod(global_coord + 0.5f * size_bar_L, size_bar_L);
-    if (shifted < 0) shifted += size_bar_L;
-    return shifted - 0.5 * size_bar_L;
+// Snap a global coordinate to the nearest bin centre using binary search.
+double CaloSysDigitiser::SnapToGrid(double coord,
+                                     const std::vector<double>& grid) const
+{
+    if (grid.empty()) return coord;
+    // lower_bound finds first element >= coord
+    auto it = std::lower_bound(grid.begin(), grid.end(), coord);
+    if (it == grid.end())   return grid.back();
+    if (it == grid.begin()) return grid.front();
+    // Choose the closer of the two neighbours
+    auto prev = std::prev(it);
+    return (coord - *prev) <= (*it - coord) ? *prev : *it;
+}
+
+// Called once from Initialise() to build the four permanent grids.
+// Detector layout:
+//   X : nhexants_X=2 hexants  →  total width  = 2 * size_bar_L
+//   Y : nhexants_Y=3 hexants  →  total height = 3 * size_bar_L
+// Global coordinates are centred on 0, so the ranges are:
+//   X : [ -nhexants_X/2 * size_bar_L ,  nhexants_X/2 * size_bar_L ]
+//   Y : [ -nhexants_Y/2 * size_bar_L ,  nhexants_Y/2 * size_bar_L ]
+void CaloSysDigitiser::BuildCoordinateGrids()
+{
+    const double x_min = -(nhexants_X / 2.0) * size_bar_L;
+    const double x_max =  (nhexants_X / 2.0) * size_bar_L;
+    const double y_min = -(nhexants_Y / 2.0) * size_bar_L;
+    const double y_max =  (nhexants_Y / 2.0) * size_bar_L;
+
+    // Fine grid  : bar width (60 mm wide / 10 mm thin) — resolves position
+    // Coarse grid: bar length (2160 mm = one full hexant) — resolves only
+    //              which hexant column/row the bar occupies
+    // Fine grids: bar centres at (n+0.5)*pitch — edges on integer multiples of pitch
+    grid_wide_fine_x  = BuildFineGrid(x_min, x_max, size_bar_W);      //   60 mm pitch in X
+    grid_wide_fine_y  = BuildFineGrid(y_min, y_max, size_bar_W);      //   60 mm pitch in Y
+    grid_thin_fine_x  = BuildFineGrid(x_min, x_max, size_thin_bar_W); //   10 mm pitch in X
+    grid_thin_fine_y  = BuildFineGrid(y_min, y_max, size_thin_bar_W); //   10 mm pitch in Y
+
+    // Coarse grids: hexant centres at n*pitch (0, ±2160 mm) — one centre per hexant
+    grid_wide_coarse_x  = BuildCoarseGrid(x_min, x_max, size_bar_L);  // 2160 mm pitch in X
+    grid_wide_coarse_y  = BuildCoarseGrid(y_min, y_max, size_bar_L);  // 2160 mm pitch in Y
+    grid_thin_coarse_x  = BuildCoarseGrid(x_min, x_max, size_bar_L);  // 2160 mm pitch in X
+    grid_thin_coarse_y  = BuildCoarseGrid(y_min, y_max, size_bar_L);  // 2160 mm pitch in Y
 }
 
 void CaloSysDigitiser::SetFile(std::string file_location_str){
@@ -116,6 +185,9 @@ void CaloSysDigitiser::Initialise(){
   ft_out->Branch("v_digi_wide_hcal",  &v_digi_wide_hcal);
   ft_out->Branch("v_digi_thin_hcal",  &v_digi_thin_hcal);
   ft_out->Branch("v_digi_sharp_hcal", &v_digi_sharp_hcal);
+
+  // Build the global coordinate grids once so SnapToGrid() can reuse them.
+  BuildCoordinateGrids();
 }
 
 
@@ -378,36 +450,35 @@ void CaloSysDigitiser::GetLayer(int layer, int type, bool hcal, double z_global)
 
 void CaloSysDigitiser::GetBar_or_Fibre(ULong64_t entry){
 
-
+  // Unpack hexant FIRST so hexantX/hexantY are valid for this entry.
   HexantUnpacker(entry);
 
-  double hx_origin = (hexantX - 1) * size_bar_L - (nhexants_X / 2.0) * size_bar_L;
-  double hy_origin = (hexantY - 1) * size_bar_L - (nhexants_Y / 2.0) * size_bar_L;
-
+  const double x_hit = v_x_global->at(entry);
+  const double y_hit = v_y_global->at(entry);
 
   switch (v_type->at(entry)) {
-    case 1: // Wide horizontal: bar runs along x (full hexant width), fine direction is y
-      v_digi_widebar_H.push_back(v_vol->at(entry));
-      v_digi_wide_x.push_back(hx_origin + size_bar_L / 2.0);
-      v_digi_wide_y.push_back(hy_origin + (std::floor((v_y_global->at(entry) - hy_origin) / size_bar_W) + 0.5) * size_bar_W); // ← hy_origin
-      break;
+    case 1: // Wide horizontal: bar runs along X (coarse), fine segmentation in Y
+        v_digi_widebar_H.push_back(v_vol->at(entry));
+        v_digi_wide_x.push_back(SnapToGrid(x_hit, grid_wide_coarse_x));  // 2160 mm pitch
+        v_digi_wide_y.push_back(SnapToGrid(y_hit, grid_wide_fine_y));    //   60 mm pitch
+        break;
 
-    case 2: // Wide vertical: bar runs along y, fine direction is x
+    case 2: // Wide vertical: bar runs along Y (coarse), fine segmentation in X
         v_digi_widebar_V.push_back(v_vol->at(entry));
-        v_digi_wide_x.push_back(hx_origin + (std::floor((v_x_global->at(entry) - hx_origin) / size_bar_W) + 0.5) * size_bar_W);
-        v_digi_wide_y.push_back(hy_origin + size_bar_L / 2.0);
+        v_digi_wide_x.push_back(SnapToGrid(x_hit, grid_wide_fine_x));    //   60 mm pitch
+        v_digi_wide_y.push_back(SnapToGrid(y_hit, grid_wide_coarse_y));  // 2160 mm pitch
         break;
-    
-    case 3: // Thin horizontal
+
+    case 3: // Thin horizontal: bar runs along X (coarse), fine segmentation in Y
         v_digi_thinbar_H.push_back(v_vol->at(entry));
-        v_digi_thin_x.push_back(hx_origin + size_bar_L / 2.0);
-        v_digi_thin_y.push_back(hy_origin + (std::floor((v_y_global->at(entry) - hy_origin) / size_bar_W) + 0.5) * size_bar_W);
+        v_digi_thin_x.push_back(SnapToGrid(x_hit, grid_thin_coarse_x)); // 2160 mm pitch
+        v_digi_thin_y.push_back(SnapToGrid(y_hit, grid_thin_fine_y));   //   10 mm pitch
         break;
-    
-    case 4: // Thin vertical
+
+    case 4: // Thin vertical: bar runs along Y (coarse), fine segmentation in X
         v_digi_thinbar_V.push_back(v_vol->at(entry));
-        v_digi_thin_x.push_back(hx_origin + (std::floor((v_x_global->at(entry) - hx_origin) / size_bar_W) + 0.5) * size_bar_W);
-        v_digi_thin_y.push_back(hy_origin + size_bar_L / 2.0);
+        v_digi_thin_x.push_back(SnapToGrid(x_hit, grid_thin_fine_x));   //   10 mm pitch
+        v_digi_thin_y.push_back(SnapToGrid(y_hit, grid_thin_coarse_y)); // 2160 mm pitch
         break;
     case 5: {
         int sublayer = v_hpl_subsection->at(entry);

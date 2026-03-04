@@ -26,6 +26,12 @@ class CaloSysDigitiser{
 
     TRandom3 rng;
 
+    
+    std::vector<double> BuildGrid(double global_min, double global_max, double pitch) const;
+    std::vector<double> BuildFineGrid(double global_min, double global_max, double pitch) const;
+    std::vector<double> BuildCoarseGrid(double global_min, double global_max, double pitch) const;
+    double SnapToGrid(double coord, const std::vector<double>& grid) const;
+    void BuildCoordinateGrids();
     void DigitiseEntry(ULong64_t entry);
     void GetLayer(int layer, int type, bool hcal, double z_global);
     int GeneratePEDCnoise();
@@ -35,10 +41,6 @@ class CaloSysDigitiser{
     void ConvertWideBarEscapingPhotonCount();
     void ConvertWideBarPE();
     double ConvertADCCountWide(double n_PE_wnoise, bool &LG);
-    double SmearWideBarsWidth(double xy) const;
-    double SmearWideBarsLength(double xy) const;
-    double SmearThinBarsWidth(double xy) const;
-    double SmearThinBarsLength(double xy) const;
     void ConvertThinBarPromptPhotonCount(double edep);
     void ConvertThinBarCapturedPhotonCount();
     void ConvertThinBarAttenuatedPhotonCount(double xylocal);
@@ -128,9 +130,20 @@ class CaloSysDigitiser{
     std::vector<double> v_digi_sharp_x;
     std::vector<double> v_digi_sharp_y;
     std::vector<double> v_digi_sharp_z;
+    // Coordinate grids (built once in Initialise via BuildCoordinateGrids)
+    std::vector<double> grid_wide_coarse_x;  // 2160 mm pitch in X
+    std::vector<double> grid_wide_coarse_y;  // 2160 mm pitch in Y
+    std::vector<double> grid_wide_fine_x;    //   60 mm pitch in X
+    std::vector<double> grid_wide_fine_y;    //   60 mm pitch in Y
+    std::vector<double> grid_thin_coarse_x;  // 2160 mm pitch in X
+    std::vector<double> grid_thin_coarse_y;  // 2160 mm pitch in Y
+    std::vector<double> grid_thin_fine_x;    //   10 mm pitch in X
+    std::vector<double> grid_thin_fine_y;    //   10 mm pitch in Y
+
     //Detector data
     double size_bar_L = 2160;
     double size_bar_W = 60;
+    double size_thin_bar_W = 10;
     int nhexants_X = 2;
     int nhexants_Y = 3;
     int nbars_wide_module = 36;
