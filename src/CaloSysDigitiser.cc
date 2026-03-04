@@ -332,9 +332,13 @@ void CaloSysDigitiser::MapFibreToSensors(double fibre_along, double fibre_transv
         }
     }
 
-    // Snap transverse coordinate to nearest sensor centre in global coordinates
-    int transverse_idx = static_cast<int>(std::floor(fibre_transverse / size_sharp_SiPM + 0.5));
-    double global_transverse = transverse_idx * size_sharp_SiPM;
+    // Snap transverse coordinate (along-fibre axis) to the hexant centre.
+    // The fibre runs the full length of a hexant, so like the bar coarse axis,
+    // only the hexant identity matters — use the coarse grid (pitch = size_bar_L).
+    // type 5: fibre runs along X → coarse grid in X; type 6: runs along Y → coarse in Y.
+    double global_transverse = (type == 5)
+        ? SnapToGrid(fibre_transverse, grid_wide_coarse_y)
+        : SnapToGrid(fibre_transverse, grid_wide_coarse_x);
 
     for (auto& [sensor_global, frac] : contributions){
       // sensor number is the global index relative to the hexant origin
@@ -396,7 +400,7 @@ double CaloSysDigitiser::GetADCCountThin(double edep, double xy_local, bool &LG)
   return ConvertADCCountThin(n_PE_wnoise,LG);
 }
 
-void CaloSysDigitiser::GetADCChannels(int type, double edep, double x_local, double y_local){
+void CaloSysDigitiser::GetADCChannels(int type, double edep, double x_local, double y_local, bool hcal, int hexant){
   
   double x_local_shifted = x_local + 0.5 * size_bar_L;
   double y_local_shifted = y_local + 0.5 * size_bar_L;
@@ -409,24 +413,36 @@ void CaloSysDigitiser::GetADCChannels(int type, double edep, double x_local, dou
             LG = 0;
             v_digi_widebar_ADC_SiPM_R.push_back(GetADCCountWide(edep, size_bar_L - x_local_shifted,LG));
             v_digi_widebar_gain_switch_R.push_back(LG);
+            v_digi_wide_orientation.push_back(1);
+            v_digi_wide_hcal.push_back(hcal);
+            v_digi_wide_hexant.push_back(hexant);
             break;
     case 2: v_digi_widebar_ADC_SiPM_L.push_back(GetADCCountWide(edep, y_local_shifted, LG));
             v_digi_widebar_gain_switch_L.push_back(LG);
             LG = 0;
             v_digi_widebar_ADC_SiPM_R.push_back(GetADCCountWide(edep, size_bar_L - y_local_shifted, LG));
             v_digi_widebar_gain_switch_R.push_back(LG);
+            v_digi_wide_orientation.push_back(2);
+            v_digi_wide_hcal.push_back(hcal);
+            v_digi_wide_hexant.push_back(hexant);
             break;
     case 3: v_digi_thinbar_ADC_SiPM_L.push_back(GetADCCountThin(edep, x_local_shifted, LG));
             v_digi_thinbar_gain_switch_L.push_back(LG);
             LG = 0;
             v_digi_thinbar_ADC_SiPM_R.push_back(GetADCCountThin(edep, size_bar_L - x_local_shifted, LG));
             v_digi_thinbar_gain_switch_R.push_back(LG);
+            v_digi_thin_orientation.push_back(3);
+            v_digi_thin_hcal.push_back(hcal);
+            v_digi_thin_hexant.push_back(hexant);
             break;
     case 4: v_digi_thinbar_ADC_SiPM_L.push_back(GetADCCountThin(edep, y_local_shifted, LG));
             v_digi_thinbar_gain_switch_L.push_back(LG);
             LG = 0;
             v_digi_thinbar_ADC_SiPM_R.push_back(GetADCCountThin(edep, size_bar_L - y_local_shifted, LG));
             v_digi_thinbar_gain_switch_R.push_back(LG);
+            v_digi_thin_orientation.push_back(4);
+            v_digi_thin_hcal.push_back(hcal);
+            v_digi_thin_hexant.push_back(hexant);
             break;
     case 5: break; //Done in another function
     case 6: break; //
@@ -516,7 +532,7 @@ void CaloSysDigitiser::DigitiseEntry(ULong64_t entry){
 
   //Enter the required data from the loaded TTree branch vectors using only the entry
 
-  GetADCChannels(v_type->at(entry),v_edep->at(entry),v_x_local->at(entry),v_y_local->at(entry));
+  GetADCChannels(v_type->at(entry),v_edep->at(entry),v_x_local->at(entry),v_y_local->at(entry),v_hcal->at(entry),v_hexant->at(entry));
   GetLayer(v_layer->at(entry),v_type->at(entry),v_hcal->at(entry),v_z_global->at(entry));
   GetBar_or_Fibre(entry);
 }

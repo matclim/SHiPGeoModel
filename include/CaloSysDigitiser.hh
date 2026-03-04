@@ -61,7 +61,7 @@ class CaloSysDigitiser{
     double AddSiPMNoise(double PEcount);
     double GetADCCountWide(double edep, double xy_local, bool &LG);
     double GetADCCountThin(double edep, double xy_local, bool &LG);
-    void GetADCChannels(int type, double edep, double x_local, double y_local);
+    void GetADCChannels(int type, double edep, double x_local, double y_local, bool hcal, int hexant);
 
 
     void GetBar_or_Fibre(ULong64_t entry);
