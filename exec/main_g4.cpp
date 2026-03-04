@@ -105,7 +105,7 @@ int main(int argc, char** argv)
   runManager->SetUserInitialization(factory.GetReferencePhysList("FTFP_BERT"));
   runManager->SetUserAction(new PrimaryGeneratorAction(run));
 
-  runManager->SetUserAction(new RunAction(static_cast<int>(run.energy_MeV)));
+  runManager->SetUserAction(new RunAction(static_cast<int>(run.energy_MeV),static_cast<std::string>(run.particle)));
   runManager->SetUserAction(new EventAction(store));
 
   runManager->Initialize();
