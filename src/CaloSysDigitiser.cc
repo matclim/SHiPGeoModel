@@ -381,35 +381,34 @@ void CaloSysDigitiser::GetBar_or_Fibre(ULong64_t entry){
 
   HexantUnpacker(entry);
 
+  double hx_origin = (hexantX - 1) * size_bar_L - (nhexants_X / 2.0) * size_bar_L;
+  double hy_origin = (hexantY - 1) * size_bar_L - (nhexants_Y / 2.0) * size_bar_L;
+
+
   switch (v_type->at(entry)) {
-    case 1: v_digi_widebar_H.push_back(v_vol->at(entry)); //Horizontal
-            v_digi_wide_x.push_back(SmearWideBarsLength(v_x_global->at(entry))); 
-            v_digi_wide_y.push_back(SmearWideBarsWidth(v_y_global->at(entry))); 
-            v_digi_wide_orientation.push_back(1);
-            v_digi_wide_hexant.push_back(hexantX*10 + hexantY);
-            v_digi_wide_hcal.push_back(v_hcal->at(entry));
-            break;
-    case 2: v_digi_widebar_V.push_back(v_vol->at(entry)); //Vertical
-            v_digi_wide_x.push_back(SmearWideBarsWidth(v_x_global->at(entry))); 
-            v_digi_wide_y.push_back(SmearWideBarsLength(v_y_global->at(entry)));
-            v_digi_wide_orientation.push_back(2);
-            v_digi_wide_hexant.push_back(hexantX*10 + hexantY);
-            v_digi_wide_hcal.push_back(v_hcal->at(entry));
-            break;
-    case 3: v_digi_thinbar_H.push_back(v_vol->at(entry)); //Horizontal
-            v_digi_thin_x.push_back(SmearThinBarsLength(v_x_global->at(entry))); 
-            v_digi_thin_y.push_back(SmearThinBarsWidth(v_y_global->at(entry))); 
-            v_digi_thin_orientation.push_back(3);
-            v_digi_thin_hexant.push_back(hexantX*10 + hexantY);
-            v_digi_thin_hcal.push_back(v_hcal->at(entry));
-            break;
-    case 4: v_digi_thinbar_V.push_back(v_vol->at(entry)); //Vertical
-            v_digi_thin_x.push_back(SmearThinBarsWidth(v_x_global->at(entry))); 
-            v_digi_thin_y.push_back(SmearThinBarsLength(v_y_global->at(entry)));
-            v_digi_thin_orientation.push_back(4);
-            v_digi_thin_hexant.push_back(hexantX*10 + hexantY);
-            v_digi_thin_hcal.push_back(v_hcal->at(entry));
-            break;
+    case 1: // Wide horizontal: bar runs along x (full hexant width), fine direction is y
+      v_digi_widebar_H.push_back(v_vol->at(entry));
+      v_digi_wide_x.push_back(hx_origin + size_bar_L / 2.0);
+      v_digi_wide_y.push_back(hy_origin + (std::floor((v_y_global->at(entry) - hy_origin) / size_bar_W) + 0.5) * size_bar_W); // ← hy_origin
+      break;
+
+    case 2: // Wide vertical: bar runs along y, fine direction is x
+        v_digi_widebar_V.push_back(v_vol->at(entry));
+        v_digi_wide_x.push_back(hx_origin + (std::floor((v_x_global->at(entry) - hx_origin) / size_bar_W) + 0.5) * size_bar_W);
+        v_digi_wide_y.push_back(hy_origin + size_bar_L / 2.0);
+        break;
+    
+    case 3: // Thin horizontal
+        v_digi_thinbar_H.push_back(v_vol->at(entry));
+        v_digi_thin_x.push_back(hx_origin + size_bar_L / 2.0);
+        v_digi_thin_y.push_back(hy_origin + (std::floor((v_y_global->at(entry) - hy_origin) / size_bar_W) + 0.5) * size_bar_W);
+        break;
+    
+    case 4: // Thin vertical
+        v_digi_thinbar_V.push_back(v_vol->at(entry));
+        v_digi_thin_x.push_back(hx_origin + (std::floor((v_x_global->at(entry) - hx_origin) / size_bar_W) + 0.5) * size_bar_W);
+        v_digi_thin_y.push_back(hy_origin + size_bar_L / 2.0);
+        break;
     case 5: {
         int sublayer = v_hpl_subsection->at(entry);
         if (sublayer < 0) break;
