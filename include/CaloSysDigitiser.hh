@@ -140,23 +140,22 @@ class CaloSysDigitiser{
     //Digitisation data
 
     double atten_length_bar_fibre = 3500;
-    double cf_wb_edep_to_prompt_photons = 12340.; //Amount cut in 2 already as there are 2 sides
+    double cf_wb_edep_to_prompt_photons = 5300.; //Amount cut in 2 already as there are 2 sides
     double cf_wb_prompt_photons_to_captured_photons = 0.05;
     double cf_wb_atten_photons_to_escaping_photons = 0.6;
     double cf_wb_PDE = 0.5;
     double cf_wb_n_PE_ADC = 1.0;
 
-    double cf_tb_edep_to_prompt_photons = 7720.;
+    double cf_tb_edep_to_prompt_photons = 3300.;
     double cf_tb_prompt_photons_to_captured_photons = 0.1;
     double cf_tb_atten_photons_to_escaping_photons = 0.6;
     double cf_tb_PDE = 0.4;
     double cf_tb_n_PE_ADC = 1.0 ;
 
-    double cf_fibre_edep_to_prompt_photons = 10000; //Amount cut in 2 already as there are 2 sides
-    double cf_fibre_prompt_photons_to_captured_photons = 0.05;
+    double cf_fibre_edep_to_prompt_photons = 10000/10.; 
     double cf_fibre_atten_photons_to_escaping_photons = 0.6;
     double cf_fibre_PDE = 0.5;
-    double cf_fibre_n_PE_ADC = 1.0;
+    double cf_fibre_n_PE_ADC = 3.0;
 
     double n_prompt_photons;
     double n_captured_photons;

@@ -136,7 +136,7 @@ void CaloSysDigitiser::ConvertWideBarEscapingPhotonCount(){
 }
 
 void CaloSysDigitiser::ConvertWideBarPE(){
-  n_PE = n_atten_photons * cf_wb_PDE;
+  n_PE = n_escaping_photons * cf_wb_PDE;
 }
 
 double CaloSysDigitiser::ConvertADCCountWide(double n_PE_wnoise, bool &LG){
@@ -153,6 +153,7 @@ double CaloSysDigitiser::ConvertADCCountThin(double n_PE_wnoise, bool &LG){
 }
 
 double CaloSysDigitiser::ConvertADCCountSHARP(double n_PE_wnoise, bool &LG){
+  if(n_PE_wnoise < 0) return hg_pedestal;
   double HG_ADC = cf_fibre_n_PE_ADC * n_PE_wnoise + hg_pedestal;
   if(HG_ADC < 1000) return HG_ADC; 
   else {LG=1; if((lg_pedestal + HG_ADC/LG_factor) < 1023) return lg_pedestal + HG_ADC/LG_factor; else return 1023;}
@@ -175,7 +176,7 @@ void CaloSysDigitiser::ConvertThinBarEscapingPhotonCount(){
 }
 
 void CaloSysDigitiser::ConvertThinBarPE(){
- n_PE = n_atten_photons * cf_tb_PDE;
+ n_PE = n_escaping_photons * cf_tb_PDE;
 }
 
 double CaloSysDigitiser::AddSiPMNoise(double PEcount){
@@ -271,6 +272,7 @@ void CaloSysDigitiser::MapFibreToSensors(double fibre_along, double fibre_transv
       n_atten_photons = n_escaping_photons * (frac / total_fraction);
       ConvertFibrePE();
       n_PE_wnoise = AddSiPMNoise(n_PE);
+      n_PE_wnoise = AddGeneralNoise(n_PE_wnoise);
       bool LG = 0;
       v_digi_sharp_ADC_SiPM.push_back(ConvertADCCountSHARP(n_PE_wnoise, LG));
       v_digi_sharp_gain_switch.push_back(LG);
@@ -293,7 +295,7 @@ void CaloSysDigitiser::MapFibreToSensors(double fibre_along, double fibre_transv
 }
 
 void CaloSysDigitiser::ConvertFibrePE(){
-  n_PE = n_atten_photons * cf_fibre_PDE;
+  n_PE = n_escaping_photons * cf_fibre_PDE;
 }
 
 
@@ -323,27 +325,31 @@ double CaloSysDigitiser::GetADCCountThin(double edep, double xy_local, bool &LG)
 }
 
 void CaloSysDigitiser::GetADCChannels(int type, double edep, double x_local, double y_local){
+  
+  double x_local_shifted = x_local + 0.5 * size_bar_L;
+  double y_local_shifted = y_local + 0.5 * size_bar_L;
+
 
   bool LG = 0;
   switch(type){
-    case 1: v_digi_widebar_ADC_SiPM_L.push_back(GetADCCountWide(edep, x_local, LG));
+    case 1: v_digi_widebar_ADC_SiPM_L.push_back(GetADCCountWide(edep, x_local_shifted, LG));
             v_digi_widebar_gain_switch_L.push_back(LG);
-            v_digi_widebar_ADC_SiPM_R.push_back(GetADCCountWide(edep, size_bar_L - x_local,LG));
+            v_digi_widebar_ADC_SiPM_R.push_back(GetADCCountWide(edep, size_bar_L - x_local_shifted,LG));
             v_digi_widebar_gain_switch_R.push_back(LG);
             break;
-    case 2: v_digi_widebar_ADC_SiPM_L.push_back(GetADCCountWide(edep, y_local, LG));
+    case 2: v_digi_widebar_ADC_SiPM_L.push_back(GetADCCountWide(edep, y_local_shifted, LG));
             v_digi_widebar_gain_switch_L.push_back(LG);
-            v_digi_widebar_ADC_SiPM_R.push_back(GetADCCountWide(edep, size_bar_L - y_local, LG));
+            v_digi_widebar_ADC_SiPM_R.push_back(GetADCCountWide(edep, size_bar_L - y_local_shifted, LG));
             v_digi_widebar_gain_switch_R.push_back(LG);
             break;
-    case 3: v_digi_thinbar_ADC_SiPM_L.push_back(GetADCCountThin(edep, x_local, LG));
+    case 3: v_digi_thinbar_ADC_SiPM_L.push_back(GetADCCountThin(edep, x_local_shifted, LG));
             v_digi_thinbar_gain_switch_L.push_back(LG);
-            v_digi_thinbar_ADC_SiPM_R.push_back(GetADCCountThin(edep, size_bar_L - x_local, LG));
+            v_digi_thinbar_ADC_SiPM_R.push_back(GetADCCountThin(edep, size_bar_L - x_local_shifted, LG));
             v_digi_thinbar_gain_switch_R.push_back(LG);
             break;
-    case 4: v_digi_thinbar_ADC_SiPM_L.push_back(GetADCCountThin(edep, y_local, LG));
+    case 4: v_digi_thinbar_ADC_SiPM_L.push_back(GetADCCountThin(edep, y_local_shifted, LG));
             v_digi_thinbar_gain_switch_L.push_back(LG);
-            v_digi_thinbar_ADC_SiPM_R.push_back(GetADCCountThin(edep, size_bar_L - y_local, LG));
+            v_digi_thinbar_ADC_SiPM_R.push_back(GetADCCountThin(edep, size_bar_L - y_local_shifted, LG));
             v_digi_thinbar_gain_switch_R.push_back(LG);
             break;
     case 5: break; //Done in another function
@@ -367,7 +373,8 @@ void CaloSysDigitiser::GetLayer(int layer, int type, bool hcal, double z_global)
 }
 
 void CaloSysDigitiser::GetBar_or_Fibre(ULong64_t entry){
- 
+
+
   HexantUnpacker(entry);
 
   switch (v_type->at(entry)) {
@@ -399,26 +406,28 @@ void CaloSysDigitiser::GetBar_or_Fibre(ULong64_t entry){
             v_digi_thin_hexant.push_back(hexantX*10 + hexantY);
             v_digi_thin_hcal.push_back(v_hcal->at(entry));
             break;
-    case 5: { // SHARP Horizontal — fibres along x, transverse is y
+    case 5: {
         int sublayer = v_hpl_subsection->at(entry);
         if (sublayer < 0) break;
-        double fibre_along      = v_x_global->at(entry); // no stagger along fibre axis
-        double fibre_transverse = GetFibreCentre(v_y_global->at(entry), sublayer); // stagger in y
+        double fibre_along      = v_x_global->at(entry);
+        double fibre_transverse = GetFibreCentre(v_y_global->at(entry), sublayer);
+        double fibre_local      = v_x_local->at(entry) + 0.5 * size_bar_L; // shift to [0, bar_L]
         ConvertFibrePromptPhotonCount(v_edep->at(entry));
-        ConvertFibreAttenuatedPhotonCount(v_x_local->at(entry));
+        ConvertFibreAttenuatedPhotonCount(fibre_local);
         ConvertFibreEscapingPhotonCount();
         MapFibreToSensors(fibre_along, fibre_transverse,
                   v_z_global->at(entry), v_layer->at(entry) + static_cast<int>(v_hcal->at(entry)) * 5,
                   5, hexantX*10 + hexantY, v_hcal->at(entry));
         break;
     }
-    case 6: { // SHARP Vertical — fibres along y, transverse is x
+    case 6: {
         int sublayer = v_hpl_subsection->at(entry);
         if (sublayer < 0) break;
         double fibre_along      = v_y_global->at(entry);
-        double fibre_transverse = GetFibreCentre(v_x_global->at(entry), sublayer); // stagger in x
+        double fibre_transverse = GetFibreCentre(v_x_global->at(entry), sublayer);
+        double fibre_local      = v_y_local->at(entry) + 0.5 * size_bar_L; // shift to [0, bar_L]
         ConvertFibrePromptPhotonCount(v_edep->at(entry));
-        ConvertFibreAttenuatedPhotonCount(v_y_local->at(entry));
+        ConvertFibreAttenuatedPhotonCount(fibre_local);
         ConvertFibreEscapingPhotonCount();
         MapFibreToSensors(fibre_along, fibre_transverse,
                   v_z_global->at(entry), v_layer->at(entry) + static_cast<int>(v_hcal->at(entry)) * 5,
