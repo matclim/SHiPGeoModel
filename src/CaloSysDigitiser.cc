@@ -77,7 +77,7 @@ void CaloSysDigitiser::Initialise(){
   ft_data->SetBranchAddress("hpl_subsection",&v_hpl_subsection);
   ft_data->SetBranchAddress("hexant",&v_hexant);
 
-  ff_out = TFile::Open("digitised_entries.root","RECREATE");
+  ff_out = TFile::Open((static_cast<std::string>("digi_")+static_cast<std::string>(ff_data->GetName())).c_str(),"RECREATE");
 
   ft_out = new TTree("digi_calo_events","Digitised SHiP calorimeter events");
   ft_out->Branch("v_digi_widebar_ADC_SiPM_L",&v_digi_widebar_ADC_SiPM_L);
