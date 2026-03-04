@@ -408,7 +408,7 @@ void CaloSysDigitiser::GetBar_or_Fibre(ULong64_t entry){
         ConvertFibreAttenuatedPhotonCount(v_x_local->at(entry));
         ConvertFibreEscapingPhotonCount();
         MapFibreToSensors(fibre_along, fibre_transverse,
-                  v_z_global->at(entry), v_layer->at(entry),
+                  v_z_global->at(entry), v_layer->at(entry) + static_cast<int>(v_hcal->at(entry)) * 5,
                   5, hexantX*10 + hexantY, v_hcal->at(entry));
         break;
     }
@@ -421,7 +421,7 @@ void CaloSysDigitiser::GetBar_or_Fibre(ULong64_t entry){
         ConvertFibreAttenuatedPhotonCount(v_y_local->at(entry));
         ConvertFibreEscapingPhotonCount();
         MapFibreToSensors(fibre_along, fibre_transverse,
-                  v_z_global->at(entry), v_layer->at(entry),
+                  v_z_global->at(entry), v_layer->at(entry) + static_cast<int>(v_hcal->at(entry)) * 5,
                   6, hexantX*10 + hexantY, v_hcal->at(entry));
         break;
     }
