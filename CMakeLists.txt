@@ -38,13 +38,13 @@ target_include_directories(CaloSysDigitiser PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# ---- Digitisation library ----
-add_library(CaloSysReco STATIC
-  src/CaloSysReco.cc
-)
-target_include_directories(CaloSysReco PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+## ---- Digitisation library ----
+#add_library(CaloSysReco STATIC
+#  src/CaloSysReco.cc
+#)
+#target_include_directories(CaloSysReco PUBLIC
+#  ${CMAKE_CURRENT_SOURCE_DIR}/include
+#)
 
 
 # ---- DB writer ----
@@ -116,23 +116,23 @@ else()
 endif()
 
 # ---- Reconstruction executable ----
-add_executable(reco_calo;
-  exec/reco_calo.cpp   
-)
-target_include_directories(reco_calo PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-# ROOT modern targets:
-if (TARGET ROOT::Core)
-  target_link_libraries(reco_calo PRIVATE
-    CaloSysReco 
-    ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
-  )
-else()
-  # Fallback for older ROOT configs
-  include(${ROOT_USE_FILE})
-  target_include_directories(reco_calo PRIVATE ${ROOT_INCLUDE_DIRS})
-  target_link_libraries(reco_calo PRIVATE CaloSysReco ${ROOT_LIBRARIES})
-endif()
-
+#add_executable(reco_calo;
+#  exec/reco_calo.cpp   
+#)
+#target_include_directories(reco_calo PRIVATE
+#  ${CMAKE_CURRENT_SOURCE_DIR}/include
+#)
+#
+## ROOT modern targets:
+#if (TARGET ROOT::Core)
+#  target_link_libraries(reco_calo PRIVATE
+#    CaloSysReco 
+#    ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
+#  )
+#else()
+#  # Fallback for older ROOT configs
+#  include(${ROOT_USE_FILE})
+#  target_include_directories(reco_calo PRIVATE ${ROOT_INCLUDE_DIRS})
+#  target_link_libraries(reco_calo PRIVATE CaloSysReco ${ROOT_LIBRARIES})
+#endif()
+#

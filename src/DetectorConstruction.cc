@@ -89,9 +89,8 @@ GeoPhysVol* DetectorConstruction::buildGeoModelWorld()
   aworldZ += GetSystemThickness(cfg.layers2,cfg.scint_thickness_mm,cfg.scint_thickness_mm,cfg.hpl_thickness_mm,cfg.iron_thickness_mm,cfg.airgap_mm);
   
     
-  const double worldZ = (aworldZ +cfg.tol_z_mm+ 5000) * GeoModelKernelUnits::mm; //Need to add 5000 to ensure that the world contains the initial particles / PG 
+  const double worldZ = 120827 * GeoModelKernelUnits::mm; 
   const double worldXY = (cfg.plate_xy_mm + std::max(cfg.tol_x_mm,cfg.tol_y_mm)) * std::max(cfg.module_nx,cfg.module_ny) * GeoModelKernelUnits::mm;
-//  const double worldZ  = 6.0 * GeoModelKernelUnits::m;
 
   auto* worldShape = new GeoBox(0.5*worldXY, 0.5*worldXY, 0.5*worldZ);
   auto* worldLog   = new GeoLogVol("WorldLog", worldShape, air);
