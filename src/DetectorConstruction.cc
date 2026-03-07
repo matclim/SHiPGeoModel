@@ -89,9 +89,8 @@ GeoPhysVol* DetectorConstruction::buildGeoModelWorld()
   aworldZ += GetSystemThickness(cfg.layers2,cfg.scint_thickness_mm,cfg.scint_thickness_mm,cfg.hpl_thickness_mm,cfg.iron_thickness_mm,cfg.airgap_mm);
   
     
-  const double worldZ = (aworldZ +cfg.tol_z_mm+ 5000) * GeoModelKernelUnits::mm; //Need to add 5000 to ensure that the world contains the initial particles / PG 
+  const double worldZ = 120827 * GeoModelKernelUnits::mm; 
   const double worldXY = (cfg.plate_xy_mm + std::max(cfg.tol_x_mm,cfg.tol_y_mm)) * std::max(cfg.module_nx,cfg.module_ny) * GeoModelKernelUnits::mm;
-//  const double worldZ  = 6.0 * GeoModelKernelUnits::m;
 
   auto* worldShape = new GeoBox(0.5*worldXY, 0.5*worldXY, 0.5*worldZ);
   auto* worldLog   = new GeoLogVol("WorldLog", worldShape, air);
@@ -113,8 +112,11 @@ for (int ix = 0; ix < nx; ++ix) {
     const int mx = ix + 1;   // 1..nx
     const int my = iy + 1;   // 1..ny
 
-    const double x = x0 + ix * pitchX;
-    const double y = y0 + iy * pitchY;
+    const double x = x0 + ix * pitchX + cfg.detector_offset_x_mm * GeoModelKernelUnits::mm;
+    const double y = y0 + iy * pitchY + cfg.detector_offset_y_mm * GeoModelKernelUnits::mm;
+    // detector_offset_z_mm is in beam coords: 0 = front face of world.
+    // Subtract halfWorldZ to convert to Geant4 internal frame (world centred at 0).
+    const double z = cfg.detector_offset_z_mm * GeoModelKernelUnits::mm - 0.5 * worldZ;
 
     // Make a module container volume (air box) and build into it
     // Need to have the modified aworldZ  aworldZ += 100 * GeoModelKernelUnits::mm; otherwise the envelop is too small !?
@@ -123,7 +125,7 @@ for (int ix = 0; ix < nx; ++ix) {
     auto* modPhys  = new GeoPhysVol(modLog);
 
     worldPhys->add(new GeoNameTag(("MODULE_MX"+std::to_string(mx)+"Y"+std::to_string(my)).c_str()));
-    worldPhys->add(new GeoTransform(GeoTrf::Translate3D(x, y, 0)));
+    worldPhys->add(new GeoTransform(GeoTrf::Translate3D(x, y, z)));
     worldPhys->add(modPhys);
 
     CalorimeterBuilder::buildStack(modPhys, MM, cfg, mx, my);
@@ -191,30 +193,70 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4cout << "[DetectorConstruction] Sensitive LVs set: " << nSensitive << G4endl;
   auto* store = G4LogicalVolumeStore::GetInstance();
   
-  auto* visWide   = MakeVis(0.0, 0.7, 0.7, 1.0);   // teal
-  auto* visThin   = MakeVis(1.0, 0.55, 0.0, 1.0);  // orange
-  auto* visFibre  = MakeVis(0.1, 0.2, 1.0, 1.0);   // blue
-  auto* visLead   = MakeVis(0.5, 0.5, 0.5, 1.0);   // gray
-  auto* visIron   = MakeVis(0.9, 0.0, 0.0, 1.0);   // red
-  auto* visAlCase = MakeVis(0.8, 0.8, 0.8, 0.15);  // transparent-ish
-  
-  for (auto* lv : *store) {
+  const int visMode = m_vis_mode;
+
+  auto* visHide = new G4VisAttributes(false);
+  auto* visWorld = new G4VisAttributes(G4Colour(1, 1, 1, 0.05));
+  visWorld->SetForceWireframe(true); visWorld->SetVisibility(true);
+  auto* visModule = new G4VisAttributes(G4Colour(0.2, 0.6, 1.0, 0.15));
+  visModule->SetVisibility(true); visModule->SetForceWireframe(true);
+
+  if (visMode == 0) {
+    visModule->SetDaughtersInvisible(true);
+    for (auto* lv : *store) {
       const auto& n = lv->GetName();
-  
-      // Adapt these substrings to your actual LV names:
-      if (n.find("WidePVT") != std::string::npos) {
-          lv->SetVisAttributes(visWide);
-      } else if (n.find("ThinPS") != std::string::npos) {
-          lv->SetVisAttributes(visThin);
-      } else if (n.find("Fibre") != std::string::npos || n.find("F") != std::string::npos) {
-          lv->SetVisAttributes(visFibre);
-      } else if (n.find("Lead") != std::string::npos || n.find("Pb") != std::string::npos) {
-          lv->SetVisAttributes(visLead);
-      } else if (n.find("Iron") != std::string::npos || n.find("Fe") != std::string::npos) {
-          lv->SetVisAttributes(visIron);
-      } else if (n.find("HPL") != std::string::npos && n.find("Al") != std::string::npos) {
-          lv->SetVisAttributes(visAlCase);
+      if      (n == "WorldLog" || n == "World")          lv->SetVisAttributes(visWorld);
+      else if (n.find("ModuleLog") != std::string::npos) lv->SetVisAttributes(visModule);
+      else                                               lv->SetVisAttributes(visHide);
+    }
+    G4cout << "[DetectorConstruction] vis_mode=0: module envelopes only." << G4endl;
+
+  }
+
+
+  else if (visMode == 1) {
+    auto* visECALlead  = new G4VisAttributes(G4Colour(0.6, 0.6, 0.6, 0.7)); visECALlead->SetForceSolid(true);  visECALlead->SetDaughtersInvisible(true);
+    auto* visECALscint = new G4VisAttributes(G4Colour(0.0, 0.8, 0.4, 0.7)); visECALscint->SetForceSolid(true); visECALscint->SetDaughtersInvisible(true);
+    auto* visECALhpl   = new G4VisAttributes(G4Colour(0.1, 0.3, 1.0, 0.7)); visECALhpl->SetForceSolid(true);   visECALhpl->SetDaughtersInvisible(true);
+    auto* visHCALiron  = new G4VisAttributes(G4Colour(0.9, 0.1, 0.1, 0.7)); visHCALiron->SetForceSolid(true);  visHCALiron->SetDaughtersInvisible(true);
+    auto* visHCALscint = new G4VisAttributes(G4Colour(1.0, 0.6, 0.0, 0.7)); visHCALscint->SetForceSolid(true); visHCALscint->SetDaughtersInvisible(true);
+    auto* visHCALhpl   = new G4VisAttributes(G4Colour(0.6, 0.0, 0.9, 0.7)); visHCALhpl->SetForceSolid(true);   visHCALhpl->SetDaughtersInvisible(true);
+    for (auto* lv : *store) {
+      const auto& n = lv->GetName();
+      if      (n == "WorldLog" || n == "World")          lv->SetVisAttributes(visWorld);
+      else if (n.find("ModuleLog") != std::string::npos) lv->SetVisAttributes(visModule);
+      else if (n.find("ECAL") != std::string::npos && n.find("_LOG") != std::string::npos) {
+        if      (n.find("Lead") != std::string::npos) lv->SetVisAttributes(visECALlead);
+        else if (n.find("HPL")  != std::string::npos) lv->SetVisAttributes(visECALhpl);
+        else                                           lv->SetVisAttributes(visECALscint);
       }
+      else if (n.find("HCAL") != std::string::npos && n.find("_LOG") != std::string::npos) {
+        if      (n.find("Iron") != std::string::npos) lv->SetVisAttributes(visHCALiron);
+        else if (n.find("HPL")  != std::string::npos) lv->SetVisAttributes(visHCALhpl);
+        else                                           lv->SetVisAttributes(visHCALscint);
+      }
+      else {
+        lv->SetVisAttributes(visHide);
+        static int dbgCount = 0;
+      }
+    }
+  } else if(visMode == 2) {
+    auto* visWide   = MakeVis(0.0, 0.7, 0.7, 1.0);
+    auto* visThin   = MakeVis(1.0, 0.55, 0.0, 1.0);
+    auto* visFibre  = MakeVis(0.1, 0.2, 1.0, 1.0);
+    auto* visLead   = MakeVis(0.5, 0.5, 0.5, 1.0);
+    auto* visIron   = MakeVis(0.9, 0.0, 0.0, 1.0);
+    auto* visAlCase = MakeVis(0.8, 0.8, 0.8, 0.15);
+    for (auto* lv : *store) {
+      const auto& n = lv->GetName();
+      if      (n.find("WidePVT") != std::string::npos) lv->SetVisAttributes(visWide);
+      else if (n.find("ThinPS")  != std::string::npos) lv->SetVisAttributes(visThin);
+      else if (n.find("Fibre")   != std::string::npos) lv->SetVisAttributes(visFibre);
+      else if (n.find("Lead") != std::string::npos || n.find("Pb") != std::string::npos) lv->SetVisAttributes(visLead);
+      else if (n.find("Iron") != std::string::npos || n.find("Fe") != std::string::npos) lv->SetVisAttributes(visIron);
+      else if (n.find("HPL")  != std::string::npos && n.find("Al") != std::string::npos) lv->SetVisAttributes(visAlCase);
+    }
+    G4cout << "[DetectorConstruction] vis_mode=2: full detail." << G4endl;
   }
   static G4Mutex gdmlMutex = G4MUTEX_INITIALIZER;
   static bool gdmlWritten = false;

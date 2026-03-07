@@ -20,6 +20,7 @@ struct RunConfig {
   int  write_gdml = 0;
   bool visualize = false;
   std::string vis_macro = "../vis.mac";
+  int vis_mode = 0;  // 0=module envelopes, 2=layer envelopes, 1=full detail
 
 };
 

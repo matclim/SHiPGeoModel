@@ -62,6 +62,9 @@ RunConfig readRunConfigFile(const std::string& path) {
     else if (key == "vis_macro") {
       cfg.vis_macro = val;
     }
+    else if (key == "vis_mode") {
+      cfg.vis_mode = std::stoi(val);
+    }
 
     else
       throw std::runtime_error("Unknown run.cfg key: " + key);

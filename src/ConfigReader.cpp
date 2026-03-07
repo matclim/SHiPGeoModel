@@ -68,6 +68,9 @@ CalorimeterConfig readConfigFile(const std::string& path)
     else if (key == "tol_x_mm") cfg.tol_x_mm = std::stod(val);
     else if (key == "tol_y_mm") cfg.tol_y_mm = std::stod(val);
     else if (key == "tol_z_mm") cfg.tol_z_mm = std::stod(val);
+    else if (key == "detector_offset_x_mm") cfg.detector_offset_x_mm = std::stod(val);
+    else if (key == "detector_offset_y_mm") cfg.detector_offset_y_mm = std::stod(val);
+    else if (key == "detector_offset_z_mm") cfg.detector_offset_z_mm = std::stod(val);
   }
   if (cfg.layers.empty())
     throw std::runtime_error("Config must define: layers = 7,1,7,3,...");

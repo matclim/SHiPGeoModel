@@ -3,7 +3,7 @@
 
 void EventStore::clear() {
   edep.clear(); x_global.clear(); y_global.clear(); z_global.clear(); x_local.clear(); y_local.clear(); z_local.clear();
-  type.clear(); section.clear(); layer.clear(); vol.clear();
+  type.clear(); section.clear(); layer.clear(); vol.clear(); hcal.clear();
 }
 
 void EventStore::addHit(const ParsedID& id, double e, const G4ThreeVector& p_global,const G4ThreeVector& p_local) {

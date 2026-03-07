@@ -99,13 +99,15 @@ int main(int argc, char** argv)
   // Shared event store
   auto* store = new EventStore;
 
-  runManager->SetUserInitialization(new DetectorConstruction(store, cfgFile, run.write_gdml));
+  auto* detCon = new DetectorConstruction(store, cfgFile, run.write_gdml);
+  detCon->SetVisMode(run.vis_mode);
+  runManager->SetUserInitialization(detCon);
 
   G4PhysListFactory factory;
   runManager->SetUserInitialization(factory.GetReferencePhysList("FTFP_BERT"));
   runManager->SetUserAction(new PrimaryGeneratorAction(run));
 
-  runManager->SetUserAction(new RunAction(static_cast<int>(run.energy_MeV)));
+  runManager->SetUserAction(new RunAction(static_cast<int>(run.energy_MeV),static_cast<std::string>(run.particle)));
   runManager->SetUserAction(new EventAction(store));
 
   runManager->Initialize();

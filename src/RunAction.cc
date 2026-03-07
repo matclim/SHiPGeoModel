@@ -8,10 +8,10 @@ RunAction::RunAction() {
 }
 
 
-RunAction::RunAction(int Beamenergy) {
+RunAction::RunAction(int Beamenergy, std::string particle) {
   auto* man = G4AnalysisManager::Instance();
   man->SetDefaultFileType("root");
-  man->SetFileName("calosim_out_"+std::to_string(Beamenergy)+"MeV");
+  man->SetFileName("calosim_out_"+std::to_string(Beamenergy)+"MeV_"+particle);
 }
 
 
