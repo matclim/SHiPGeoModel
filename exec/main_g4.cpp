@@ -99,7 +99,9 @@ int main(int argc, char** argv)
   // Shared event store
   auto* store = new EventStore;
 
-  runManager->SetUserInitialization(new DetectorConstruction(store, cfgFile, run.write_gdml));
+  auto* detCon = new DetectorConstruction(store, cfgFile, run.write_gdml);
+  detCon->SetVisMode(run.vis_mode);
+  runManager->SetUserInitialization(detCon);
 
   G4PhysListFactory factory;
   runManager->SetUserInitialization(factory.GetReferencePhysList("FTFP_BERT"));

@@ -31,4 +31,11 @@ struct CalorimeterConfig {
   double tol_x_mm = 10;
   double tol_y_mm = 10;
   double tol_z_mm = 10;
+
+  // Global displacement of the entire detector stack in the world volume.
+  // Useful e.g. to move the detector downstream so that short-lived primaries
+  // (pi0, etc.) have room to decay before reaching the first active layer.
+  double detector_offset_x_mm = 0.0;
+  double detector_offset_y_mm = 0.0;
+  double detector_offset_z_mm = 0.0;
 };
